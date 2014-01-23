@@ -5,9 +5,51 @@
     <meta charset="utf-8">
     <title>Shipbuilder</title>
     <link rel="stylesheet" href="shipbuilder.css">
+    <script type="text/javascript">
+			window.onbeforeunload = function(e) {
+		    return "Sure you want to leave?";
+			};
+			
+			function update(which){
+				document.getElementById(which+'count').innerText = document.getElementById(which+'loc').value;	
+			}
+		</script>
   </head>
   <body>
-    <h1>Shipbuilder</h1>
+    <h1>Shipbuilder v0.1</h1>
+    <span id="blockinput">
+    	<select id="color">
+    		<option value="Black">Black</option>
+    		<!--<option value="White">White</option>-->
+    		<option value="Yellow">Yellow</option>
+    		<option value="Red">Red</option>
+    		<option value="Green">Green</option>
+    		<option value="Blue">Blue</option> 
+    		<option value="Erase">Erase</option>   		
+    	</select>
+    	<br/>    	
+    	<select id="shiptype">
+    		<option value="small">Small</option>
+    		<option value="large">Large</option>
+    	</select>
+    	<br />
+    	<span>
+    		<span id="xcount">0</span>
+    		<input type="range" id="xloc" min="-128" max="128" onchange="update('x')" />    		
+    	</span>
+    	<br />
+    	<span>
+    		<span id="ycount">0</span>
+    		<input type="range" id="yloc" min="-128" max="128" onchange="update('y')" />    		
+    	</span>
+    	<br />
+    	<span>
+    		<span id="zcount">0</span>
+    		<input type="range" id="zloc" min="-128" max="128" onchange="update('z')" />    		
+    	</span>
+    	<br />    	
+    	<input type="button" id="clearboard" value="Clear Board" />    	
+    </span>
     <script type="application/dart" src="shipbuilder.dart"></script>
     <script src="packages/browser/dart.js"></script>
   </body>

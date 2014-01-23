@@ -46,3 +46,9 @@ canvas{
 		top:20%;
 		right:0%;
 }
+
+#blockinput{
+		position:absolute;
+		top:0px;
+		right:0px;
+}
