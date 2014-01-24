@@ -1,5 +1,6 @@
 import 'dart:html';
 import 'dart:math';
+import 'dart:async';
 
 int width = 800;
 int height = 800;
@@ -8,15 +9,17 @@ CanvasRenderingContext2D left_context;
 CanvasRenderingContext2D middle_context;
 CanvasRenderingContext2D right_context;
 
-List<Square> squares;
+List<Block> squares;
 List<List> boards = new List<List>();
-List<Square> brushlist;
+List<Block> brushlist;
 
 int boardnumber = 0;
 
 String blocksize = "SmallBlock";
-String blocktype = "ArmorBlock";
+String brushblocktype = "ArmorBlock";
 String gridsize = "Small";
+
+String brushtype = "constant";
 
 Element dispboardnum = new Element.html("<p>");
 
@@ -47,59 +50,123 @@ void main() {
 	div.children.add(p);
 	
 	middle_canvas.onClick.listen((MouseEvent e){
-		if(brushing){
-			brushing = false;
-			for(var i = 0; i<brushlist.length; i++){
-				brushlist.elementAt(i).change(false);
+		if(brushtype=="constant"){
+			if(brushing){
+				brushing = false;
+				for(var i = 0; i<brushlist.length; i++){
+					brushlist.elementAt(i).change(false);
+				}
+				squares = brushlist;
+			}else if(!brushing){
+				brushing = true;
+				brushlist = squares;
 			}
-			squares = brushlist;
-		}else if(!brushing){
-			brushing = true;
-			brushlist = squares;
+		}else if(brushtype=="dot"){
+		var x = (e.offset.x);
+		var y = (e.offset.y);
+		List<Block> tmplist = boards.elementAt(boardnumber);
+		for(var i = 0; i<tmplist.length; i++){
+			var cur = tmplist.elementAt(i);
+			if(x>=cur.getX()&& x<=cur.getX()+10){				
+				if(y>=cur.getY() && y<=cur.getY()+10){					
+					if(brushblocktype=="ArmorBlock"){
+						tmplist.elementAt(i).activate(getCurrentColor());
+						tmplist.elementAt(i).setType(brushblocktype);
+					}else if(brushblocktype=="ArmorSlope"){
+						tmplist.elementAt(i).activate(getCurrentColor());
+						tmplist.elementAt(i).setType(brushblocktype);
+						tmplist.elementAt(i).rotate();
+					}
+					break;
+				}
+			}
 		}
-		// keep this around for indiviual square painting later possibly
-//		var x = (e.offset.x);
-//		var y = (e.offset.y);
-//		List<Square> tmplist = boards.elementAt(boardnumber);
-//		for(var i = 0; i<tmplist.length; i++){
-//			var cur = tmplist.elementAt(i);
-//			if(x>=cur.getX()&& x<=cur.getX()+10){				
-//				if(y>=cur.getY() && y<=cur.getY()+10){					
-//					tmplist.elementAt(i).toggle();
-////					print("Toggle");
-//					break;
-//				}
-//			}
-//		}
-//		draw_board();
+		draw_board();
+		}
+
 	});
 	
 	middle_canvas.onMouseMove.listen((MouseEvent e){
-		if(brushing){
-			var x = (e.offset.x);
-			var y = (e.offset.y);
-			for(var i = 0; i<brushlist.length; i++){
-				var cur = brushlist.elementAt(i);
-				if(x>=cur.getX()&& x<=cur.getX()+10){				
-					if(y>=cur.getY() && y<=cur.getY()+10){
-						if(!brushlist.elementAt(i).changed()){
-							brushlist.elementAt(i).toggle(getCurrentColor());
-							brushlist.elementAt(i).change(true);
-							print("Toggle");
-						}
+		if(brushtype=="constant"){
+			if(brushing){
+				var x = (e.offset.x);
+				var y = (e.offset.y);
+				for(var i = 0; i<brushlist.length; i++){
+					var cur = brushlist.elementAt(i);
+					if(x>=cur.getX()&& x<=cur.getX()+10){				
+						if(y>=cur.getY() && y<=cur.getY()+10){
+							if(!brushlist.elementAt(i).changed()){
+								brushlist.elementAt(i).activate(getCurrentColor());
+								brushlist.elementAt(i).setType(brushblocktype);
+								brushlist.elementAt(i).change(true);
+							}
 						
-						break;
+							break;
+						}
 					}
 				}
+				draw_brush_board();
 			}
-			draw_brush_board();
 		}
 	});
 	
-	document.getElementById("clearboard").onClick.listen((MouseEvent e){
-	 	boards = new List<List>();
-	 	init_board();
+	document.getElementById("clearboards").onClick.listen((MouseEvent e){
+		Element confirmButton = mkConfirmButton();
+		document.getElementById("clearboardscontainer").nodes.add(confirmButton);
+		confirmButton.onClick.listen((MouseEvent e){
+	 		boards = new List<List>();
+	 		boardnumber = 0;
+		 	init_board();
+		 	brushlist = squares;
+	 		draw_board();
+	 		draw_side_boards();
+	 		confirmButton.remove();
+		});
+		Timer removeButton = new Timer(new Duration(milliseconds:5000), (){
+			try{
+				confirmButton.remove();
+			}catch(e){}
+		});	 	
 	});
+	
+	document.getElementById("clearboard").onClick.listen((MouseEvent e){
+		Element confirmButton = mkConfirmButton();
+		document.getElementById("clearboardcontainer").nodes.add(confirmButton);
+		confirmButton.onClick.listen((MouseEvent e){
+			boards.remove(squares);
+			init_board();
+			brushlist = squares;
+			draw_board();
+			confirmButton.remove();
+		});
+		
+		Timer removeButton = new Timer(new Duration(milliseconds:5000), (){
+			try{
+				confirmButton.remove();
+			}catch(e){}
+		});
+	});
+	
+	document.getElementById("fillboard").onClick.listen((MouseEvent e){
+		Element confirmButton = mkConfirmButton();
+		document.getElementById("fillboardcontainer").nodes.add(confirmButton);
+		confirmButton.onClick.listen((MouseEvent e){
+			for(var i=0; i<squares.length; i++){
+				squares.elementAt(i).activate(getCurrentColor());
+			}
+			draw_board();
+			confirmButton.remove();
+		});
+		
+		Timer removeButton = new Timer(new Duration(milliseconds:5000), (){
+			try{
+				confirmButton.remove();
+			}catch(e){}
+		});
+		
+	});
+	
+	
 	
 	document.getElementById("shiptype").onChange.listen((Event e){
 		String changeTo = document.getElementById("shiptype").value;
@@ -112,6 +179,21 @@ void main() {
 		}
 	});
 	
+	document.getElementById("blocktype").onChange.listen((Event e){
+		String changeTo = document.getElementById("blocktype").value;
+		if(changeTo=="lightarmorblock"){
+			brushblocktype="ArmorBlock";
+		}else if(changeTo=="lightslopearmorblock"){
+			brushblocktype="ArmorSlope";
+			brushtype="dot";
+			document.getElementById("brushtype").value = "dot";
+		}
+	});
+	
+	document.getElementById("brushtype").onChange.listen((Event e){
+		brushtype = document.getElementById("brushtype").value;
+	});
+	
 	document.body.onKeyDown.listen((KeyboardEvent e){
 		/*
 		 * 37 = <-
@@ -119,7 +201,6 @@ void main() {
 		 * 38 = ^
 		 * 40 = v
 		 */
-		print(e.keyCode);
 		if(e.keyCode == 37){
 			//previous board
 			print("Previous Button Clicked");
@@ -144,11 +225,18 @@ void main() {
 
 }
 
+mkConfirmButton(){
+	Element confirmButton = new Element.html("<input>");
+	confirmButton.setAttribute("type", "button");
+	confirmButton.setAttribute("value", "Confirm");
+	return confirmButton;
+}
+
 init_board(){
-	squares = new List<Square>();
+	squares = new List<Block>();
 	for(var i = 0; i<width~/10; i++){
 		for(var j = 0; j<height~/10; j++){
-			squares.add(new Square(i*10,j*10, "White"));
+			squares.add(new Block(i*10,j*10, "White", brushblocktype));
 		}
 	}
 	boards.add(squares);
@@ -158,7 +246,7 @@ init_board(){
 draw_board(){
 	//main board
 	clearBoard(middle_context);
-	List<Square> middlelist = boards.elementAt(boardnumber);
+	List<Block> middlelist = boards.elementAt(boardnumber);
 	for(var i=0; i<middlelist.length; i++){
 		middlelist.elementAt(i).draw(true, middle_context);
 	}
@@ -180,7 +268,7 @@ draw_side_boards(){
 	//left board
 	clearBoard(left_context);
 	if(boardnumber>0){
-		List<Square> leftlist = boards.elementAt(boardnumber-1);
+		List<Block> leftlist = boards.elementAt(boardnumber-1);
 		for(var i = 0; i<leftlist.length; i++){
 			leftlist.elementAt(i).draw(false, left_context);
 		}
@@ -191,11 +279,8 @@ draw_side_boards(){
 
 	//right board
 	clearBoard(right_context);
-	print(boards.length);
-	print(boardnumber);
-	print(boards.length-1>boardnumber+1);
 	if(boards.length-1>boardnumber+1){
-		List<Square> rightlist = boards.elementAt(boardnumber+1);
+		List<Block> rightlist = boards.elementAt(boardnumber+1);
 		for(var i = 0; i<rightlist.length; i++){
 			rightlist.elementAt(i).draw(false, right_context);
 		}
@@ -231,6 +316,7 @@ Element DrawingCanvas(Element addTo){
 	var canvas = new Element.html('<canvas/>');
 	canvas.width = width;
 	canvas.height = height;
+	canvas.id = "middle";
 	addTo.children.add(canvas);
 	return canvas;
 }
@@ -319,9 +405,9 @@ String export_board(){
 
 	
 	for(var i=0; i<boards.length; i++){
-		List<Square> tmps = boards.elementAt(i);
+		List<Block> tmps = boards.elementAt(i);
 		for(var j=0; j<tmps.length; j++){
-			Square square = tmps.elementAt(j);
+			Block square = tmps.elementAt(j);
 			if(square.isActive()){
 				xml += '<MyObjectBuilder_CubeBlock>\n';
 				xml += '<SubtypeName>'+square.getType()+'</SubtypeName>\n';
@@ -338,14 +424,87 @@ String export_board(){
 				xml += '<Z>'+i.toString()+'</Z>\n';
 				xml += '</Max>\n';
 				xml += '<Orientation>\n';
-				xml += '<X>0</X>\n';
-				xml += '<Y>0</Y>\n';
-				xml += '<Z>0</Z>\n';
-				xml += '<W>1</W>\n';
+				if(square.getBlockType()=="ArmorBlock"){
+					xml += '<X>0</X>\n';
+					xml += '<Y>0</Y>\n';
+					xml += '<Z>0</Z>\n';
+					xml += '<W>1</W>\n';
+				}else if(square.getBlockType()=="ArmorSlope"){
+					
+					int rot = square.getRotation();
+					if(rot == 0){
+						//correct
+						xml += '<X>0.5</X>\n';
+						xml += '<Y>-0.5</Y>\n';
+						xml += '<Z>0.5</Z>\n';
+						xml += '<W>0.5</W>\n';
+					}else if(rot==1){
+						//correct
+						xml += '<X>0.5</X>\n';
+						xml += '<Y>0.5</Y>\n';
+						xml += '<Z>-0.5</Z>\n';
+						xml += '<W>0.5</W>\n';
+					}else if(rot==2){
+						//correct
+						xml += '<X>0.5</X>\n';
+						xml += '<Y>0.5</Y>\n';
+						xml += '<Z>0.5</Z>\n';
+						xml += '<W>-0.5</W>\n';
+					}else if(rot==3){
+						//correct
+						xml += '<X>0.5</X>\n';
+						xml += '<Y>-0.5</Y>\n';
+						xml += '<Z>-0.5</Z>\n';
+						xml += '<W>-0.5</W>\n';
+					}else if(rot==4){
+						//correct
+						xml += '<X>-0.707106769</X>\n';
+						xml += '<Y>0</Y>\n';
+						xml += '<Z>0</Z>\n';
+						xml += '<W>0.707106769</W>\n';
+					}else if(rot==5){
+						//correct
+						xml += '<X>1</X>\n';
+						xml += '<Y>0</Y>\n';
+						xml += '<Z>0</Z>\n';
+						xml += '<W>0</W>\n';
+					}else if(rot==6){
+						//correct
+						xml += '<X>0</X>\n';
+						xml += '<Y>0</Y>\n';
+						xml += '<Z>0</Z>\n';
+						xml += '<W>1</W>\n';
+					}else if(rot==7){
+						//correct
+						xml += '<X>0.707106769</X>\n';
+						xml += '<Y>0</Y>\n';
+						xml += '<Z>0</Z>\n';
+						xml += '<W>0.707106769</W>\n';
+					}else if(rot==8){
+					xml += '<X>0.707106769</X>\n';
+					xml += '<Y>0.707106769</Y>\n';
+					xml += '<Z>0</Z>\n';
+					xml += '<W>0</W>\n';
+					}else if(rot==9){
+					xml += '<X>0.707106769</X>\n';
+					xml += '<Y>-0.707106769</Y>\n';
+					xml += '<Z>0</Z>\n';
+					xml += '<W>0</W>\n';
+					}else if(rot==10){
+					xml += '<X>0</X>\n';
+					xml += '<Y>0</Y>\n';
+					xml += '<Z>-0.707106769</Z>\n';
+					xml += '<W>0.707106769</W>\n';
+					}else if(rot==11){
+					xml += '<X>0</X>\n';
+					xml += '<Y>0</Y>\n';
+					xml += '<Z>0.707106769</Z>\n';
+					xml += '<W>0.707106769</W>\n';
+					}
+					
+				}
 				xml += '</Orientation>\n';
 				xml += '</MyObjectBuilder_CubeBlock>\n';
-				print(square.getX()~/10);
-				print(square.getY()~/10);
 			}
 
 		}
@@ -369,7 +528,6 @@ String export_board(){
 	xml+="<ZMirroxPlane xsi:nil=\"true\" />\n";
 	xml+="</MyObjectBuilder_EntityBase>\n";
 
-//	print(xml);
 	return xml;
 }
 
@@ -393,22 +551,23 @@ getCurrentColor(){
 	return document.getElementById("color").value;
 }
 
-class Square{
+class Block{
 	int x;
 	int y;
+	int rotation = -1;
 	String color = 'White';
 	bool active = false;
 	bool hasBeenChanged = false;
+	String blocktype = "ArmorBlock";
 	
 	static int sqwidth = 10;
 	static int sqheight = 10;
 	
-	Square(int x, int y, String color){
+	Block(int x, int y, String color, String type){
 		this.x = x;
 		this.y = y;
 		this.color = color;
 	}
-	
 	
 	
 	String getType(){
@@ -418,53 +577,175 @@ class Square{
 			return blocksize+blocktype+color;
 		}
 	}
+
 	
 	draw(bool middle, CanvasRenderingContext2D context){
+		context.fillStyle = color;
+		context.setStrokeColorRgb(0, 0, 0, 1);
 		if(active){
 			if(middle){
-				context.beginPath();
-				context.rect(this.x,this.y,sqwidth,sqheight);
-				context.fillStyle = color;
-				context.fill();	
-				context.closePath();
+				if(blocktype=="ArmorBlock"){
+					context.beginPath();
+					context.rect(this.x,this.y,sqwidth,sqheight);
+					context.fill();	
+					context.closePath();
+				}else if(blocktype=="ArmorSlope"){
+					//move ifs for rotation
+					context.beginPath();
+					if(rotation==0){
+						drawTriangleLines(context, new Point(x, y+sqheight), new Point(x+sqwidth, y+sqheight), new Point(x+sqwidth, y));
+						return;
+					}else if(rotation==1){
+						drawTriangleLines(context, new Point(x,y), new Point(x, y+sqheight), new Point(x+sqwidth, y+sqheight));
+						return;
+					}else if(rotation==2){
+						drawTriangleLines(context, new Point(x,y), new Point(x+sqwidth, y), new Point(x, y+sqheight));
+						return;
+					}else if(rotation==3){
+						drawTriangleLines(context, new Point(x,y), new Point(x+sqwidth, y), new Point(x+sqwidth, y+sqheight));
+						return;
+					}else if(rotation==4){
+						//square with line at top
+						context.rect(this.x, this.y, sqwidth, sqheight);	
+						context.setFillColorRgb(255, 255, 255, 1);
+						context.moveTo(x+2, y+2);
+						context.lineTo(x+sqwidth-2, y+2);
+					}else if(rotation==5){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.setFillColorRgb(255, 255,255,1);
+						context.moveTo(x+2, y+sqheight-2);
+						context.lineTo(x+sqwidth-2, y+sqheight-2);
+					}else if(rotation==6){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.fill();
+						context.stroke();
+						context.closePath();						
+						
+						context.beginPath();
+						context.moveTo(x+2, y+2);
+						context.lineTo(x+sqwidth-2, y+2);
+						context.setStrokeColorRgb(255,255,255,1);
+						context.stroke();
+						context.closePath();
+						return;
+					}else if(rotation==7){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.fill();
+						context.stroke();
+						context.closePath();						
+						
+						context.beginPath();
+						context.moveTo(x+2, y+sqheight-2);
+						context.lineTo(x+sqwidth-2, y+sqheight-2);
+						context.setStrokeColorRgb(255,255,255,1);
+						context.stroke();
+						context.closePath();
+						return;
+					}else if(rotation==8){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.setFillColorRgb(255, 255,255,1);
+						context.moveTo(x+2, y+2);
+						context.lineTo(x+2, y+sqheight-2);
+					}else if(rotation==9){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.setFillColorRgb(255, 255,255,1);
+						context.moveTo(x+sqwidth-2, y+2);
+						context.lineTo(x+sqwidth-2, y+sqheight-2);
+					}else if(rotation==10){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.fill();
+						context.stroke();
+						context.closePath();					
+					
+						context.beginPath();
+						context.moveTo(x+2, y+2);
+						context.lineTo(x+2, y+sqheight-2);
+						context.setStrokeColorRgb(255,255,255,1);
+						context.stroke();
+						context.closePath();
+						return;
+					}else if(rotation==11){
+						context.rect(this.x, this.y, sqwidth, sqheight);
+						context.fill();
+						context.stroke();
+						context.closePath();					
+					
+						context.beginPath();
+						context.moveTo(x+sqwidth-2, y+2);
+						context.lineTo(x+sqwidth-2, y+sqheight-2);
+						context.setStrokeColorRgb(255,255,255,1);
+						context.stroke();
+						context.closePath();
+						return;
+					}
+					context.fill();
+					context.stroke();
+					context.closePath();
+				}
 			}else{
-				context.beginPath();
-				context.rect(this.x~/2,this.y~/2,sqwidth~/2,sqheight~/2);
-				context.fillStyle = color;
-				context.fill();	
-				context.closePath();
+				if(blocktype=="ArmorBlock"){
+					context.beginPath();
+					context.rect(this.x~/2,this.y~/2,sqwidth~/2,sqheight~/2);
+					context.fill();	
+					context.closePath();
+				}else if(blocktype=="ArmorSlope"){
+				
+				}
 			}
 		}
 
 	}
 	
-	toggle(String color){
+	drawTriangleLines(CanvasRenderingContext2D context, Point p1, Point p2, Point p3){
+		context.moveTo(p1.x, p1.y);
+		context.lineTo(p2.x, p2.y);
+		context.lineTo(p3.x, p3.y);
+		context.lineTo(p1.x, p1.y);
+		context.fill();
+		context.stroke();
+		context.closePath();
+	}
+	
+	activate(String color){
 		if(color == 'Erase'){
 			//deactivate - color white
 			this.color = 'White';
 			active = false;
 		}else if(color != 'Erase'){			
-			this.color = getCurrentColor();
-			print(this.color);
+			this.color = color;
 			active = true;
 		}
 
 	}
 	
+	rotate(){		
+		if(rotation>=12){
+			rotation = -1;
+			activate("Erase");
+			return;
+		}
+		rotation++;
+	}
+
+	
+	setType(String type){blocktype = type;}	
 	change(bool change){hasBeenChanged = change;}
 	bool changed(){return hasBeenChanged;}
 	getX(){return x;}
 	getY(){return y;}
 	isActive(){return active;}
+	String getBlockType(){return blocktype;}
+	getRotation(){return rotation;}
+	
 }
 /*TODO:
  * saving support for full maps
+ * import from file/text
  * brush sizes
- * confirmation for clearing board
  * add in white and default color block somehow
  * other block types
- * 
- * 	
+ * webgl 3d rendering
+ * find way to set value without throwing warnings
  * 
  *  acceptable color list
  *  Yellow

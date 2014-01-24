@@ -33,6 +33,19 @@
     		<option value="large">Large</option>
     	</select>
     	<br />
+    	<select id="blocktype">
+    		<option disabled>---Light Blocks---</option>
+    		<option value="lightarmorblock">ArmorBlock</option>
+    		<option value="lightslopearmorblock">SlopeBlock</option>
+    		<option disabled>---Heavy Blocks---</option>
+    		
+    	</select>
+    	<br />
+    	<select id="brushtype">
+    		<option value="constant">Constant</option>
+    		<option value="dot">Dot Mode</option>
+    	</select>
+    	<br />
     	<span>
     		<span id="xcount">0</span>
     		<input type="range" id="xloc" min="-128" max="128" onchange="update('x')" />    		
@@ -47,8 +60,19 @@
     		<span id="zcount">0</span>
     		<input type="range" id="zloc" min="-128" max="128" onchange="update('z')" />    		
     	</span>
-    	<br />    	
-    	<input type="button" id="clearboard" value="Clear Board" />    	
+    	<br />
+    	<span id="fillboardcontainer">
+    		<input type="button" id="fillboard" value="Fill Board" />
+    	</span>
+    	<br />
+    	<span id="clearboardscontainer">	
+    		<input type="button" id="clearboards" value="Clear Boards" />
+    	</span>    	
+    	<br />
+    	<span id="clearboardcontainer">
+    		<input type="button" id="clearboard" value="Clear Board" />
+    	</span>
+    	<br />
     </span>
     <script type="application/dart" src="shipbuilder.dart"></script>
     <script src="packages/browser/dart.js"></script>
