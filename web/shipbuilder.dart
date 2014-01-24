@@ -9,9 +9,10 @@ CanvasRenderingContext2D left_context;
 CanvasRenderingContext2D middle_context;
 CanvasRenderingContext2D right_context;
 
-List<Block> squares;
+
+List<List> rows;
 List<List> boards = new List<List>();
-List<Block> brushlist;
+List<List> brushlist;
 
 int boardnumber = 0;
 
@@ -54,30 +55,36 @@ void main() {
 			if(brushing){
 				brushing = false;
 				for(var i = 0; i<brushlist.length; i++){
-					brushlist.elementAt(i).change(false);
+					List<Block> blocks = brushlist.elementAt(i);
+					for(var j=0; j<blocks.length; j++){
+						blocks.elementAt(j).change(false);
+					}
 				}
-				squares = brushlist;
+				rows = brushlist;
 			}else if(!brushing){
 				brushing = true;
-				brushlist = squares;
+				brushlist = rows;
 			}
 		}else if(brushtype=="dot"){
 		var x = (e.offset.x);
 		var y = (e.offset.y);
-		List<Block> tmplist = boards.elementAt(boardnumber);
+		List<List> tmplist = boards.elementAt(boardnumber);
 		for(var i = 0; i<tmplist.length; i++){
-			var cur = tmplist.elementAt(i);
-			if(x>=cur.getX()&& x<=cur.getX()+10){				
-				if(y>=cur.getY() && y<=cur.getY()+10){					
-					if(brushblocktype=="ArmorBlock"){
-						tmplist.elementAt(i).activate(getCurrentColor());
-						tmplist.elementAt(i).setType(brushblocktype);
-					}else if(brushblocktype=="ArmorSlope"){
-						tmplist.elementAt(i).activate(getCurrentColor());
-						tmplist.elementAt(i).setType(brushblocktype);
-						tmplist.elementAt(i).rotate();
+			List<Block> blocks = tmplist.elementAt(i);
+			for(var j = 0; j<blocks.length; j++){
+				Block cur = blocks.elementAt(j);
+				if(x>=cur.getX()&& x<=cur.getX()+10){				
+					if(y>=cur.getY() && y<=cur.getY()+10){					
+						if(brushblocktype=="ArmorBlock"){
+							cur.activate(getCurrentColor());
+							cur.setType(brushblocktype);
+						}else if(brushblocktype=="ArmorSlope"){
+							cur.activate(getCurrentColor());
+							cur.setType(brushblocktype);
+							cur.rotate();
+						}
+						break;
 					}
-					break;
 				}
 			}
 		}
@@ -92,16 +99,18 @@ void main() {
 				var x = (e.offset.x);
 				var y = (e.offset.y);
 				for(var i = 0; i<brushlist.length; i++){
-					var cur = brushlist.elementAt(i);
-					if(x>=cur.getX()&& x<=cur.getX()+10){				
-						if(y>=cur.getY() && y<=cur.getY()+10){
-							if(!brushlist.elementAt(i).changed()){
-								brushlist.elementAt(i).activate(getCurrentColor());
-								brushlist.elementAt(i).setType(brushblocktype);
-								brushlist.elementAt(i).change(true);
+					List<Block> blocks = brushlist.elementAt(i);
+					for(var j = 0; j<blocks.length; j++){
+						Block cur = blocks.elementAt(j);
+						if(x>=cur.getX()&& x<=cur.getX()+10){				
+							if(y>=cur.getY() && y<=cur.getY()+10){
+								if(!cur.changed()){
+									cur.activate(getCurrentColor());
+									cur.setType(brushblocktype);
+									cur.change(true);
+								}
+								break;
 							}
-						
-							break;
 						}
 					}
 				}
@@ -117,7 +126,7 @@ void main() {
 	 		boards = new List<List>();
 	 		boardnumber = 0;
 		 	init_board();
-		 	brushlist = squares;
+		 	brushlist = rows;
 	 		draw_board();
 	 		draw_side_boards();
 	 		confirmButton.remove();
@@ -133,9 +142,9 @@ void main() {
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("clearboardcontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-			boards.remove(squares);
+			boards.remove(rows);
 			init_board();
-			brushlist = squares;
+			brushlist = rows;
 			draw_board();
 			confirmButton.remove();
 		});
@@ -151,8 +160,11 @@ void main() {
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("fillboardcontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-			for(var i=0; i<squares.length; i++){
-				squares.elementAt(i).activate(getCurrentColor());
+			for(var i=0; i<rows.length; i++){
+				List<Block> blocks = rows.elementAt(i);
+				for(var j=0; j<blocks.length; j++){
+					blocks.elementAt(j).activate(getCurrentColor());
+				}
 			}
 			draw_board();
 			confirmButton.remove();
@@ -233,22 +245,29 @@ mkConfirmButton(){
 }
 
 init_board(){
-	squares = new List<Block>();
-	for(var i = 0; i<width~/10; i++){
-		for(var j = 0; j<height~/10; j++){
-			squares.add(new Block(i*10,j*10, "White", brushblocktype));
+	rows = new List<List>();
+	for(var i = 0; i<height~/10; i++){
+		int rownumber = i*10;
+		List<Block> row = new List<Block>();
+		for(var j = 0; j<width~/10; j++){
+			row.add(new Block(j*10,rownumber, "White", brushblocktype));
 		}
+		rows.add(row);
 	}
-	boards.add(squares);
+	boards.add(rows);
 	draw_board();
 }
 
 draw_board(){
 	//main board
 	clearBoard(middle_context);
-	List<Block> middlelist = boards.elementAt(boardnumber);
+	List<List> middlelist = boards.elementAt(boardnumber);
 	for(var i=0; i<middlelist.length; i++){
-		middlelist.elementAt(i).draw(true, middle_context);
+		List<Block> blocks = middlelist.elementAt(i);
+		for(var j = 0; j<blocks.length; j++){
+			blocks.elementAt(j).draw(true, middle_context);
+		}
+		
 	}
 	
 	dispboardnum.innerHtml = "Boardnumber: "+boardnumber.toString();
@@ -258,7 +277,10 @@ draw_brush_board(){
 	//	main board
 	clearBoard(middle_context);
 	for(var i=0; i<brushlist.length; i++){
-		brushlist.elementAt(i).draw(true, middle_context);
+		List<Block> blocks = brushlist.elementAt(i);
+		for(var j=0;j<blocks.length; j++){
+			blocks.elementAt(j).draw(true, middle_context);
+		}
 	}
 
 	dispboardnum.innerHtml = "Boardnumber: "+boardnumber.toString();
@@ -268,9 +290,12 @@ draw_side_boards(){
 	//left board
 	clearBoard(left_context);
 	if(boardnumber>0){
-		List<Block> leftlist = boards.elementAt(boardnumber-1);
+		List<List> leftlist = boards.elementAt(boardnumber-1);
 		for(var i = 0; i<leftlist.length; i++){
-			leftlist.elementAt(i).draw(false, left_context);
+			List<Block> blocks = leftlist.elementAt(i);
+			for(var j=0; j<blocks.length; j++){
+				blocks.elementAt(j).draw(false, left_context);
+			}
 		}
 	}else{
 	//clear board method
@@ -280,9 +305,12 @@ draw_side_boards(){
 	//right board
 	clearBoard(right_context);
 	if(boards.length-1>boardnumber+1){
-		List<Block> rightlist = boards.elementAt(boardnumber+1);
+		List<List> rightlist = boards.elementAt(boardnumber+1);
 		for(var i = 0; i<rightlist.length; i++){
-			rightlist.elementAt(i).draw(false, right_context);
+			List<Block> blocks = rightlist.elementAt(i);
+			for(var j = 0; j<blocks.length; j++){
+				blocks.elementAt(j).draw(false, right_context);
+			}
 		}
 	}
 }
@@ -405,108 +433,108 @@ String export_board(){
 
 	
 	for(var i=0; i<boards.length; i++){
-		List<Block> tmps = boards.elementAt(i);
-		for(var j=0; j<tmps.length; j++){
-			Block square = tmps.elementAt(j);
-			if(square.isActive()){
-				xml += '<MyObjectBuilder_CubeBlock>\n';
-				xml += '<SubtypeName>'+square.getType()+'</SubtypeName>\n';
-				xml += '<EntityId>0</EntityId>\n';
-				xml += '<PersistentFlags>None</PersistentFlags>\n';
-				xml += '<Min>\n';
-				xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
-				xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
-				xml += '<Z>'+i.toString()+'</Z>\n';
-				xml += '</Min>\n';
-				xml += '<Max>\n';
-				xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
-				xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
-				xml += '<Z>'+i.toString()+'</Z>\n';
-				xml += '</Max>\n';
-				xml += '<Orientation>\n';
-				if(square.getBlockType()=="ArmorBlock"){
-					xml += '<X>0</X>\n';
-					xml += '<Y>0</Y>\n';
-					xml += '<Z>0</Z>\n';
-					xml += '<W>1</W>\n';
-				}else if(square.getBlockType()=="ArmorSlope"){
-					
-					int rot = square.getRotation();
-					if(rot == 0){
-						//correct
-						xml += '<X>0.5</X>\n';
-						xml += '<Y>-0.5</Y>\n';
-						xml += '<Z>0.5</Z>\n';
-						xml += '<W>0.5</W>\n';
-					}else if(rot==1){
-						//correct
-						xml += '<X>0.5</X>\n';
-						xml += '<Y>0.5</Y>\n';
-						xml += '<Z>-0.5</Z>\n';
-						xml += '<W>0.5</W>\n';
-					}else if(rot==2){
-						//correct
-						xml += '<X>0.5</X>\n';
-						xml += '<Y>0.5</Y>\n';
-						xml += '<Z>0.5</Z>\n';
-						xml += '<W>-0.5</W>\n';
-					}else if(rot==3){
-						//correct
-						xml += '<X>0.5</X>\n';
-						xml += '<Y>-0.5</Y>\n';
-						xml += '<Z>-0.5</Z>\n';
-						xml += '<W>-0.5</W>\n';
-					}else if(rot==4){
-						//correct
-						xml += '<X>-0.707106769</X>\n';
-						xml += '<Y>0</Y>\n';
-						xml += '<Z>0</Z>\n';
-						xml += '<W>0.707106769</W>\n';
-					}else if(rot==5){
-						//correct
-						xml += '<X>1</X>\n';
-						xml += '<Y>0</Y>\n';
-						xml += '<Z>0</Z>\n';
-						xml += '<W>0</W>\n';
-					}else if(rot==6){
-						//correct
+		List<List> boardlist = boards.elementAt(i);
+		for(var j=0; j<boardlist.length; j++){
+			List<Block> rows = boardlist.elementAt(j);
+			for(var k=0; k<rows.length; k++){
+				Block square = rows.elementAt(k);
+				if(square.isActive()){
+					xml += '<MyObjectBuilder_CubeBlock>\n';
+					xml += '<SubtypeName>'+square.getType()+'</SubtypeName>\n';
+					xml += '<EntityId>0</EntityId>\n';
+					xml += '<PersistentFlags>None</PersistentFlags>\n';
+					xml += '<Min>\n';
+					xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
+					xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
+					xml += '<Z>'+i.toString()+'</Z>\n';
+					xml += '</Min>\n';
+					xml += '<Max>\n';
+					xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
+					xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
+					xml += '<Z>'+i.toString()+'</Z>\n';
+					xml += '</Max>\n';
+					xml += '<Orientation>\n';
+					if(square.getBlockType()=="ArmorBlock"){
 						xml += '<X>0</X>\n';
 						xml += '<Y>0</Y>\n';
 						xml += '<Z>0</Z>\n';
 						xml += '<W>1</W>\n';
-					}else if(rot==7){
-						//correct
-						xml += '<X>0.707106769</X>\n';
-						xml += '<Y>0</Y>\n';
-						xml += '<Z>0</Z>\n';
-						xml += '<W>0.707106769</W>\n';
-					}else if(rot==8){
-					xml += '<X>0.707106769</X>\n';
-					xml += '<Y>0.707106769</Y>\n';
-					xml += '<Z>0</Z>\n';
-					xml += '<W>0</W>\n';
-					}else if(rot==9){
-					xml += '<X>0.707106769</X>\n';
-					xml += '<Y>-0.707106769</Y>\n';
-					xml += '<Z>0</Z>\n';
-					xml += '<W>0</W>\n';
-					}else if(rot==10){
-					xml += '<X>0</X>\n';
-					xml += '<Y>0</Y>\n';
-					xml += '<Z>-0.707106769</Z>\n';
-					xml += '<W>0.707106769</W>\n';
-					}else if(rot==11){
-					xml += '<X>0</X>\n';
-					xml += '<Y>0</Y>\n';
-					xml += '<Z>0.707106769</Z>\n';
-					xml += '<W>0.707106769</W>\n';
+					}else if(square.getBlockType()=="ArmorSlope"){
+						int rot = square.getRotation();
+						if(rot == 0){
+							//correct
+							xml += '<X>0.5</X>\n';
+							xml += '<Y>-0.5</Y>\n';
+							xml += '<Z>0.5</Z>\n';
+							xml += '<W>0.5</W>\n';
+						}else if(rot==1){
+							//correct
+							xml += '<X>0.5</X>\n';
+							xml += '<Y>0.5</Y>\n';
+							xml += '<Z>-0.5</Z>\n';
+							xml += '<W>0.5</W>\n';
+						}else if(rot==2){
+							//correct
+							xml += '<X>0.5</X>\n';
+							xml += '<Y>0.5</Y>\n';
+							xml += '<Z>0.5</Z>\n';
+							xml += '<W>-0.5</W>\n';
+						}else if(rot==3){
+							//correct
+							xml += '<X>0.5</X>\n';
+							xml += '<Y>-0.5</Y>\n';
+							xml += '<Z>-0.5</Z>\n';
+							xml += '<W>-0.5</W>\n';
+						}else if(rot==4){
+							//correct
+							xml += '<X>-0.707106769</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>0.707106769</W>\n';
+						}else if(rot==5){
+							//correct
+							xml += '<X>1</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>0</W>\n';
+						}else if(rot==6){
+							//correct
+							xml += '<X>0</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>1</W>\n';
+						}else if(rot==7){
+							//correct
+							xml += '<X>0.707106769</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>0.707106769</W>\n';
+						}else if(rot==8){
+							xml += '<X>0.707106769</X>\n';
+							xml += '<Y>0.707106769</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>0</W>\n';
+						}else if(rot==9){
+							xml += '<X>0.707106769</X>\n';
+							xml += '<Y>-0.707106769</Y>\n';
+							xml += '<Z>0</Z>\n';
+							xml += '<W>0</W>\n';
+						}else if(rot==10){
+							xml += '<X>0</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>-0.707106769</Z>\n';
+							xml += '<W>0.707106769</W>\n';
+						}else if(rot==11){
+							xml += '<X>0</X>\n';
+							xml += '<Y>0</Y>\n';
+							xml += '<Z>0.707106769</Z>\n';
+							xml += '<W>0.707106769</W>\n';
+						}					
 					}
-					
+					xml += '</Orientation>\n';
+					xml += '</MyObjectBuilder_CubeBlock>\n';
 				}
-				xml += '</Orientation>\n';
-				xml += '</MyObjectBuilder_CubeBlock>\n';
 			}
-
 		}
 	}
 	
