@@ -212,7 +212,10 @@ void main() {
 		 * 39 = ->
 		 * 38 = ^
 		 * 40 = v
+		 * 
+		 * number line starts at 49
 		 */
+//		print(e.keyCode);
 		if(e.keyCode == 37){
 			//previous board
 			print("Previous Button Clicked");
@@ -227,6 +230,23 @@ void main() {
 			boardnumber++;
 			init_board();
 			draw_side_boards();
+		}else if(e.keyCode == 48){
+			//number 0 erase
+			setCurrentColor("Erase");
+		}else if(e.keyCode == 49){
+			//number 1
+			setCurrentColor("Black");
+		}else if(e.keyCode == 50){
+			//number 2
+			setCurrentColor("Yellow");
+		}else if(e.keyCode == 51){
+			//number 3
+			setCurrentColor("Red");
+		}else if(e.keyCode == 52){
+			//number 4
+			setCurrentColor("Green");
+		}else if(e.keyCode == 53){
+			setCurrentColor("Blue");
 		}
 	});
 	
@@ -579,6 +599,10 @@ getCurrentColor(){
 	return document.getElementById("color").value;
 }
 
+setCurrentColor(String color){
+	document.getElementById("color").value = color;
+}
+
 class Block{
 	int x;
 	int y;
@@ -620,17 +644,21 @@ class Block{
 				}else if(blocktype=="ArmorSlope"){
 					//move ifs for rotation
 					context.beginPath();
+					Point topleft = new Point(x,y);
+					Point topright = new Point(x+sqwidth, y);
+					Point bottomleft = new Point(x, y+sqheight);
+					Point bottomright = new Point(x+sqwidth, y+sqheight);
 					if(rotation==0){
-						drawTriangleLines(context, new Point(x, y+sqheight), new Point(x+sqwidth, y+sqheight), new Point(x+sqwidth, y));
+						drawTriangleLines(context, bottomleft, bottomright, topright);
 						return;
 					}else if(rotation==1){
-						drawTriangleLines(context, new Point(x,y), new Point(x, y+sqheight), new Point(x+sqwidth, y+sqheight));
+						drawTriangleLines(context, topleft, bottomleft, bottomright);
 						return;
 					}else if(rotation==2){
-						drawTriangleLines(context, new Point(x,y), new Point(x+sqwidth, y), new Point(x, y+sqheight));
+						drawTriangleLines(context, topleft, topright, bottomleft);
 						return;
 					}else if(rotation==3){
-						drawTriangleLines(context, new Point(x,y), new Point(x+sqwidth, y), new Point(x+sqwidth, y+sqheight));
+						drawTriangleLines(context, topleft, topright, bottomright);
 						return;
 					}else if(rotation==4){
 						//square with line at top
@@ -774,6 +802,7 @@ class Block{
  * other block types
  * webgl 3d rendering
  * find way to set value without throwing warnings
+ * neighbor lists
  * 
  *  acceptable color list
  *  Yellow
