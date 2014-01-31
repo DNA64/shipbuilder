@@ -16,7 +16,7 @@ List<List> brushlist;
 
 int boardnumber = 0;
 
-String blocksize = "SmallBlock";
+String blocksize = "Small";
 String brushblocktype = "ArmorBlock";
 String gridsize = "Small";
 
@@ -75,10 +75,10 @@ void main() {
 				Block cur = blocks.elementAt(j);
 				if(x>=cur.getX()&& x<=cur.getX()+10){				
 					if(y>=cur.getY() && y<=cur.getY()+10){					
-						if(brushblocktype=="ArmorBlock"){
+						if(brushblocktype=="ArmorBlock" || brushblocktype=="HeavyBlockArmorBlock"){
 							cur.activate(getCurrentColor());
 							cur.setType(brushblocktype);
-						}else if(brushblocktype=="ArmorSlope"){
+						}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){
 							cur.activate(getCurrentColor());
 							cur.setType(brushblocktype);
 							cur.rotate();
@@ -183,10 +183,10 @@ void main() {
 	document.getElementById("shiptype").onChange.listen((Event e){
 		String changeTo = document.getElementById("shiptype").value;
 		if(changeTo == "small"){
-			blocksize = "SmallBlock";
+			blocksize = "Small";
 			gridsize = "Small";
 		}else if(changeTo=="large"){
-			blocksize = "LargeBlock";
+			blocksize = "Large";
 			gridsize = "Large";
 		}
 	});
@@ -197,6 +197,12 @@ void main() {
 			brushblocktype="ArmorBlock";
 		}else if(changeTo=="lightslopearmorblock"){
 			brushblocktype="ArmorSlope";
+			brushtype="dot";
+			document.getElementById("brushtype").value = "dot";
+		}else if(changeTo=="largearmorblock"){
+			brushblocktype="HeavyBlockArmorBlock";
+		}else if(changeTo=="largearmorslope"){
+			brushblocktype="HeavyBlockArmorSlope";
 			brushtype="dot";
 			document.getElementById("brushtype").value = "dot";
 		}
@@ -474,12 +480,12 @@ String export_board(){
 					xml += '<Z>'+i.toString()+'</Z>\n';
 					xml += '</Max>\n';
 					xml += '<Orientation>\n';
-					if(square.getBlockType()=="ArmorBlock"){
+					if(square.getBlockType()=="ArmorBlock" || square.getBlockType()=="HeavyBlockArmorBlock"){
 						xml += '<X>0</X>\n';
 						xml += '<Y>0</Y>\n';
 						xml += '<Z>0</Z>\n';
 						xml += '<W>1</W>\n';
-					}else if(square.getBlockType()=="ArmorSlope"){
+					}else if(square.getBlockType()=="ArmorSlope" || square.getBlockType()=="HeavyBlockArmorSlope"){
 						int rot = square.getRotation();
 						if(rot == 0){
 							//correct
@@ -624,9 +630,19 @@ class Block{
 	
 	String getType(){
 		if(color=='White'){
-			return blocksize+blocktype;
+			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
+				//heavy blocks don't need the "Block"
+				return blocksize+blocktype;
+			}else{
+				//other blocks do
+				return blocksize+"Block"+blocktype;
+			}
 		}else{
-			return blocksize+blocktype+color;
+			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
+				return blocksize+blocktype+color;
+			}else{
+				return blocksize+"Block"+blocktype+color;
+		}
 		}
 	}
 
@@ -636,12 +652,12 @@ class Block{
 		context.setStrokeColorRgb(0, 0, 0, 1);
 		if(active){
 			if(middle){
-				if(blocktype=="ArmorBlock"){
+				if(blocktype=="ArmorBlock" || blocktype=="HeavyBlockArmorBlock"){
 					context.beginPath();
 					context.rect(this.x,this.y,sqwidth,sqheight);
 					context.fill();	
 					context.closePath();
-				}else if(blocktype=="ArmorSlope"){
+				}else if(blocktype=="ArmorSlope" || blocktype=="HeavyBlockArmorSlope"){
 					//move ifs for rotation
 					context.beginPath();
 					Point topleft = new Point(x,y);
