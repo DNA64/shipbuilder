@@ -15,6 +15,7 @@ List<List> boards = new List<List>();
 List<List> brushlist;
 
 int boardnumber = 0;
+var symmetry = [false,false,false];
 
 String blocksize = "Small";
 String brushblocktype = "ArmorBlock";
@@ -24,13 +25,18 @@ String brushtype = "constant";
 
 Element dispboardnum = new Element.html("<p>");
 
+Element progressbar = document.getElementById("exporting");
+
 bool brushing = false;
+bool exporting = false;
+
+String xml = "";
 
 void main() {
 	Element canvasdiv = divElement("canvasdiv");
-	CanvasElement left_canvas_ = left_canvas(canvasdiv);
+	CanvasElement left_canvas_ = side_canvas(canvasdiv, "left");
 	CanvasElement middle_canvas = DrawingCanvas(canvasdiv);
-	CanvasElement right_canvas_ = right_canvas(canvasdiv);
+	CanvasElement right_canvas_ = side_canvas(canvasdiv, "right");
 
 	
 	left_context = left_canvas_.getContext("2d");
@@ -66,29 +72,73 @@ void main() {
 				brushlist = rows;
 			}
 		}else if(brushtype=="dot"){
-		var x = (e.offset.x);
-		var y = (e.offset.y);
-		List<List> tmplist = boards.elementAt(boardnumber);
-		for(var i = 0; i<tmplist.length; i++){
-			List<Block> blocks = tmplist.elementAt(i);
-			for(var j = 0; j<blocks.length; j++){
-				Block cur = blocks.elementAt(j);
-				if(x>=cur.getX()&& x<=cur.getX()+10){				
-					if(y>=cur.getY() && y<=cur.getY()+10){					
-						if(brushblocktype=="ArmorBlock" || brushblocktype=="HeavyBlockArmorBlock"){
-							cur.activate(getCurrentColor());
-							cur.setType(brushblocktype);
-						}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){
-							cur.activate(getCurrentColor());
-							cur.setType(brushblocktype);
-							cur.rotate();
+			var x = (e.offset.x);
+			var y = (e.offset.y);
+			List<List> listrows = boards.elementAt(boardnumber);
+			for(var i = 0; i<listrows.length; i++){
+				// i = rownumber
+				List<Block> blocks = listrows.elementAt(i);
+				for(var j = 0; j<blocks.length; j++){
+					//j = block number in row
+					Block cur = blocks.elementAt(j);
+					if(x>=cur.getX()&& x<=cur.getX()+10){				
+						if(y>=cur.getY() && y<=cur.getY()+10){
+							if(brushblocktype=="ArmorBlock" || brushblocktype=="HeavyBlockArmorBlock"){
+								cur.activate(getCurrentColor());
+								cur.setType(brushblocktype);
+								if(symmetry[0]){
+								//left right symmetry
+								//(j,i)								
+									Block opposite = listrows.elementAt(i).elementAt(width~/10-j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);							
+								}
+								if(symmetry[1]){
+								//top bottom symmetry
+									Block opposite = listrows.elementAt(height~/10-i).elementAt(j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);
+								}
+								if(symmetry[2]){
+								//axis symmetry
+									Block opposite = listrows.elementAt(height~/10-i).elementAt(width~/10-j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);
+								}
+							}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){
+								cur.activate(getCurrentColor());
+								cur.setType(brushblocktype);
+								cur.rotate();
+								if(symmetry[0]){
+								//left right symmetry
+								//(j,i)								
+									Block opposite = listrows.elementAt(i).elementAt(width~/10-j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);
+									opposite.rotate();
+								}
+								if(symmetry[1]){
+								//top bottom symmetry
+									Block opposite = listrows.elementAt(height~/10-i).elementAt(j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);
+									opposite.rotate();
+								}
+								if(symmetry[2]){
+								//axis symmetry
+									Block opposite = listrows.elementAt(height~/10-i).elementAt(width~/10-j);
+									opposite.activate(getCurrentColor());
+									opposite.setType(brushblocktype);
+									opposite.rotate();
+								}
+							}
+						
+							break;
 						}
-						break;
 					}
 				}
 			}
-		}
-		draw_board();
+			draw_board();
 		}
 
 	});
@@ -108,6 +158,29 @@ void main() {
 									cur.activate(getCurrentColor());
 									cur.setType(brushblocktype);
 									cur.change(true);
+									if(symmetry[0]){
+									//left right symmetry
+									//(j,i)								
+										Block opposite = brushlist.elementAt(i).elementAt(width~/10-j);
+										opposite.activate(getCurrentColor());
+										opposite.setType(brushblocktype);
+										opposite.change(true);
+									}
+									if(symmetry[1]){
+								//top bottom symmetry
+										Block opposite = brushlist.elementAt(height~/10-i).elementAt(j);
+										opposite.activate(getCurrentColor());
+										opposite.setType(brushblocktype);
+										opposite.change(true);
+									}
+									if(symmetry[2]){
+									//axis symmetry
+										Block opposite = brushlist.elementAt(height~/10-i).elementAt(width~/10-j);
+										opposite.activate(getCurrentColor());
+										opposite.setType(brushblocktype);
+										opposite.change(true);
+									}
+									
 								}
 								break;
 							}
@@ -156,6 +229,8 @@ void main() {
 		});
 	});
 	
+
+	
 	document.getElementById("fillboard").onClick.listen((MouseEvent e){
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("fillboardcontainer").nodes.add(confirmButton);
@@ -178,7 +253,33 @@ void main() {
 		
 	});
 	
+	document.getElementById("insertboard").onClick.listen((MouseEvent e){
+	//shifts forward
+		Element confirmButton = mkConfirmButton();
+		document.getElementById("insertboardcontainer").nodes.add(confirmButton);
+		confirmButton.onClick.listen((MouseEvent e){
+			rows = mkBlankBoard();
+			if(boardnumber>0){
+				boards.insert(boardnumber, rows);
+				draw_board();
+			}else{
+				boards.insert(0, rows);
+				draw_board();
+			}
+			brushlist = rows;
+			draw_side_boards();
+			
+			confirmButton.remove();
+		});
 	
+		Timer removeButton = new Timer(new Duration(milliseconds:5000), (){
+			try{
+				confirmButton.remove();
+			}catch(e){
+	
+			}
+		});
+	});
 	
 	document.getElementById("shiptype").onChange.listen((Event e){
 		String changeTo = document.getElementById("shiptype").value;
@@ -208,6 +309,10 @@ void main() {
 		}
 	});
 	
+	symmetryToggle("leftrightsymmetry",0);
+	symmetryToggle("topbottomsymmetry",1);
+	symmetryToggle("axissymmetry",2);
+	
 	document.getElementById("brushtype").onChange.listen((Event e){
 		brushtype = document.getElementById("brushtype").value;
 	});
@@ -221,7 +326,7 @@ void main() {
 		 * 
 		 * number line starts at 49
 		 */
-//		print(e.keyCode);
+		print(e.keyCode);
 		if(e.keyCode == 37){
 			//previous board
 			print("Previous Button Clicked");
@@ -253,6 +358,16 @@ void main() {
 			setCurrentColor("Green");
 		}else if(e.keyCode == 53){
 			setCurrentColor("Blue");
+		}else if(e.keyCode== 68){
+			//dump debug
+			print(boards);
+			for(var i =0; i<rows.length; i++){
+				String tmpstring = "";
+				for(var j = 0; j<rows.elementAt(i).length; j++){
+					tmpstring+=(rows.elementAt(i).elementAt(j).active).toString()+", ";
+				}
+				print(tmpstring);
+			}
 		}
 	});
 	
@@ -263,6 +378,13 @@ void main() {
 
 }
 
+symmetryToggle(String id, int location){
+	document.getElementById(id).onChange.listen((Event e){
+		print(id);
+		symmetry[location] = !symmetry[location];
+	});
+}
+
 mkConfirmButton(){
 	Element confirmButton = new Element.html("<input>");
 	confirmButton.setAttribute("type", "button");
@@ -271,17 +393,22 @@ mkConfirmButton(){
 }
 
 init_board(){
-	rows = new List<List>();
+	rows = mkBlankBoard();
+	boards.add(rows);
+	draw_board();
+}
+
+List<List> mkBlankBoard(){
+	List<List> tmprows = new List<List>();
 	for(var i = 0; i<height~/10; i++){
 		int rownumber = i*10;
 		List<Block> row = new List<Block>();
 		for(var j = 0; j<width~/10; j++){
 			row.add(new Block(j*10,rownumber, "White", brushblocktype));
 		}
-		rows.add(row);
+		tmprows.add(row);
 	}
-	boards.add(rows);
-	draw_board();
+	return tmprows;
 }
 
 draw_board(){
@@ -330,7 +457,7 @@ draw_side_boards(){
 
 	//right board
 	clearBoard(right_context);
-	if(boards.length-1>boardnumber+1){
+	if(boards.length>boardnumber+1){
 		List<List> rightlist = boards.elementAt(boardnumber+1);
 		for(var i = 0; i<rightlist.length; i++){
 			List<Block> blocks = rightlist.elementAt(i);
@@ -348,20 +475,11 @@ DivElement divElement(String ID){
 	return div;
 }
 
-Element left_canvas(Element addTo){
+Element side_canvas(Element addTo, String side){
 	var canvas = new Element.html('<canvas/>');
 	canvas.width = width~/2;
 	canvas.height = height~/2;
-	canvas.id = "left";
-	addTo.children.add(canvas);
-	return canvas;
-}
-
-Element right_canvas(Element addTo){
-	var canvas = new Element.html('<canvas/>');
-	canvas.width = width~/2;
-	canvas.height = height~/2;
-	canvas.id = "right";
+	canvas.id = side;
 	addTo.children.add(canvas);
 	return canvas;
 }
@@ -375,6 +493,9 @@ Element DrawingCanvas(Element addTo){
 	return canvas;
 }
 
+String getFileName(){
+	return document.getElementById("filename").value;
+}
 
 
 Element export_board_button(Element addTo){
@@ -383,8 +504,18 @@ Element export_board_button(Element addTo){
 	button.innerHtml = "Export";
 	button.id = "export";
 	button.onClick.listen((MouseEvent e){
-		print("Export Button Clicked");
-		download(export_board());
+		if(!exporting){
+			print("Export Button Clicked");
+			export_board();
+			var numblocks = boards.length*width~/10*height~/10;
+			Timer t = new Timer(new Duration(milliseconds:numblocks*2), (){
+				print(xml);
+				download(xml);
+				exporting = false;
+				progressbar.setAttribute("value", "0".toString());
+			});
+			exporting = true;
+		}
 	});
 	addTo.children.add(button);
 	
@@ -430,10 +561,15 @@ getPosition(String xyz){
 
 String export_board(){
 	//have to export to xml
+	var numboards = boards.length;
+	int progress = 0;
+	var numblocks = numboards*width~/10*height~/10;
+	progressbar.setAttribute("max", numblocks.toString());
+	progressbar.setAttribute("value", progress.toString());
 	var rng = new Random();
 	
 	//returns string to download, can be complete file or snippet
-	String xml = '<MyObjectBuilder_EntityBase xsi:type="MyObjectBuilder_CubeGrid">\n'
+	xml = '<MyObjectBuilder_EntityBase xsi:type="MyObjectBuilder_CubeGrid">\n'
 	'<EntityId>'+(2403842243863731929+rng.nextInt(999)).toString()+'</EntityId>\n' //needs to be randomized?
 	'<PersistentFlags>CastShadows InScene</PersistentFlags>\n'
 	'<PositionAndOrientation>\n'
@@ -456,13 +592,27 @@ String export_board(){
 	'<GridSizeEnum>'+gridsize+'</GridSizeEnum>\n'
 	'<CubeBlocks>\n'	
 	;
+	var activeblocks = 0;
+	for(var i=0; i<boards.length; i++){
+		List<List> boardlist = boards.elementAt(i);
+			for(var j=0; j<boardlist.length; j++){
+				List<Block> rows = boardlist.elementAt(j);
+				for(var k=0; k<rows.length; k++){
+					Block square = rows.elementAt(k);
+					if(square.isActive()){
+						activeblocks++;
+					}
+				}
+			}
+	}
+	print("ActiveBlocks: "+activeblocks.toString());
 
-	
 	for(var i=0; i<boards.length; i++){
 		List<List> boardlist = boards.elementAt(i);
 		for(var j=0; j<boardlist.length; j++){
 			List<Block> rows = boardlist.elementAt(j);
 			for(var k=0; k<rows.length; k++){
+				Timer t = new Timer(new Duration(milliseconds:i*j*k+2), (){
 				Block square = rows.elementAt(k);
 				if(square.isActive()){
 					xml += '<MyObjectBuilder_CubeBlock>\n';
@@ -560,35 +710,43 @@ String export_board(){
 					xml += '</Orientation>\n';
 					xml += '</MyObjectBuilder_CubeBlock>\n';
 				}
+					progress++;
+					progressbar.setAttribute("value", progress.toString());
+//					print(progress);
+				});
 			}
 		}
 	}
 	
-	xml+="</CubeBlocks>\n";
-	xml+="<IsStatic>false</IsStatic>\n";
-	xml+="<Skeleton />\n";
-	xml+="<LinearVelocity>\n";
-	xml+="<X>0</X>\n";
-	xml+="<Y>0</Y>\n";
-	xml+="<Z>0</Z>\n";
-	xml+="</LinearVelocity>\n";
-	xml+="<AngularVelocity>\n";
-	xml+="<X>0</X>\n";
-	xml+="<Y>0</Y>\n";
-	xml+="<Z>0</Z>\n";
-	xml+="</AngularVelocity>\n";
-	xml+="<XMirroxPlane xsi:nil=\"true\" />\n";
-	xml+="<YMirroxPlane xsi:nil=\"true\" />\n";
-	xml+="<ZMirroxPlane xsi:nil=\"true\" />\n";
-	xml+="</MyObjectBuilder_EntityBase>\n";
+	Timer ts = new Timer(new Duration(milliseconds:activeblocks*2+6400*boards.length), (){
+		print("Finishing");
+		xml+="</CubeBlocks>\n";
+		xml+="<IsStatic>false</IsStatic>\n";
+		xml+="<Skeleton />\n";
+		xml+="<LinearVelocity>\n";
+		xml+="<X>0</X>\n";
+		xml+="<Y>0</Y>\n";
+		xml+="<Z>0</Z>\n";
+		xml+="</LinearVelocity>\n";
+		xml+="<AngularVelocity>\n";
+		xml+="<X>0</X>\n";
+		xml+="<Y>0</Y>\n";
+		xml+="<Z>0</Z>\n";
+		xml+="</AngularVelocity>\n";
+		xml+="<XMirroxPlane xsi:nil=\"true\" />\n";
+		xml+="<YMirroxPlane xsi:nil=\"true\" />\n";
+		xml+="<ZMirroxPlane xsi:nil=\"true\" />\n";
+		xml+="</MyObjectBuilder_EntityBase>\n";
 
-	return xml;
+		return xml;
+	});
 }
+
 
 download(String value){
 	Element downloadLink = new Element.html("<a>");
 	downloadLink.setAttribute("href","data:text;charset=utf-8,"+Uri.encodeComponent(value));
-	downloadLink.setAttribute("download", "SpaceEngineers.xml");
+	downloadLink.setAttribute("download", getFileName());
 	document.body.nodes.add(downloadLink);
 	downloadLink.click();
 	document.body.nodes.remove(downloadLink);
@@ -818,7 +976,8 @@ class Block{
  * other block types
  * webgl 3d rendering
  * find way to set value without throwing warnings
- * neighbor lists
+ * neighbor lists (calculate at creation)
+ * nicer files (not one big massive one)
  * 
  *  acceptable color list
  *  Yellow
