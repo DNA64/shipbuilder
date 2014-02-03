@@ -96,7 +96,20 @@
     <progress id="exporting"></progress>
     <br />
     <input type="text" id="filename" value="SpaceEngineers.xml"/>
+    <br />
+    <input type="file" id="import" />
     <script type="application/dart" src="shipbuilder.dart"></script>
     <script src="packages/browser/dart.js"></script>
+    <canvas id="left" ></canvas>
+    <canvas id="middle" ></canvas>
+    <canvas id="right" ></canvas>
+    <div id="buttons">
+    	<button id="previous">Previous</button>
+    	<button id="export">Export</button>
+    	<button id="next">Next</button>
+    </div>
+    <div id="info">
+    	<p id="display"><span id="boardnumber"></span></p>
+    </div>
   </body>
 </html>

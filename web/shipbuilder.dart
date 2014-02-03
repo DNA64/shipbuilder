@@ -2,6 +2,9 @@ import 'dart:html';
 import 'dart:math';
 import 'dart:async';
 
+import 'block.dart';
+import 'board.dart';
+
 int width = 800;
 int height = 800;
 
@@ -9,10 +12,7 @@ CanvasRenderingContext2D left_context;
 CanvasRenderingContext2D middle_context;
 CanvasRenderingContext2D right_context;
 
-
-List<List> rows;
-List<List> boards = new List<List>();
-List<List> brushlist;
+List<Board> boards = new List<Board>();
 
 int boardnumber = 0;
 var symmetry = [false,false,false];
@@ -23,7 +23,7 @@ String gridsize = "Small";
 
 String brushtype = "constant";
 
-Element dispboardnum = new Element.html("<p>");
+Element dispboardnum = document.getElementById("boardnumber");
 
 Element progressbar = document.getElementById("exporting");
 
@@ -33,114 +33,44 @@ bool exporting = false;
 String xml = "";
 
 void main() {
-	Element canvasdiv = divElement("canvasdiv");
-	CanvasElement left_canvas_ = side_canvas(canvasdiv, "left");
-	CanvasElement middle_canvas = DrawingCanvas(canvasdiv);
-	CanvasElement right_canvas_ = side_canvas(canvasdiv, "right");
+	CanvasElement left_canvas = document.getElementById("left");
+	left_canvas.width = width~/2;
+	left_canvas.height = height~/2;
+	CanvasElement middle_canvas = document.getElementById("middle");
+	middle_canvas.width = width;
+	middle_canvas.height = height;
+	CanvasElement right_canvas = document.getElementById("right");
+	right_canvas.width = width~/2;
+	right_canvas.height = height~/2;
 
 	
-	left_context = left_canvas_.getContext("2d");
+	left_context = left_canvas.getContext("2d");
 	middle_context = middle_canvas.getContext("2d");
-	right_context = right_canvas_.getContext("2d");
+	right_context = right_canvas.getContext("2d");
 	init_board();
 	
-	clearBoard(left_context);
-	clearBoard(middle_context);
-	clearBoard(right_context);
-	
-	
-	Element div = divElement("buttondiv");
-	Element p = new Element.html("<p>");
-	previous_board_button(p);
-	export_board_button(p);
-	next_board_button(p);
-	div.children.add(p);
+
+	document.getElementById("previous").onClick.listen((MouseEvent e){	
+		previous_board();
+	});
+	export_board_button();
+	document.getElementById("next").onClick.listen((MouseEvent e){
+		next_board();
+	});	
 	
 	middle_canvas.onClick.listen((MouseEvent e){
 		if(brushtype=="constant"){
 			if(brushing){
-				brushing = false;
-				for(var i = 0; i<brushlist.length; i++){
-					List<Block> blocks = brushlist.elementAt(i);
-					for(var j=0; j<blocks.length; j++){
-						blocks.elementAt(j).change(false);
-					}
-				}
-				rows = brushlist;
+				brushing = false;				
 			}else if(!brushing){
-				brushing = true;
-				brushlist = rows;
+				brushing = true;				
 			}
 		}else if(brushtype=="dot"){
 			var x = (e.offset.x);
 			var y = (e.offset.y);
-			List<List> listrows = boards.elementAt(boardnumber);
-			for(var i = 0; i<listrows.length; i++){
-				// i = rownumber
-				List<Block> blocks = listrows.elementAt(i);
-				for(var j = 0; j<blocks.length; j++){
-					//j = block number in row
-					Block cur = blocks.elementAt(j);
-					if(x>=cur.getX()&& x<=cur.getX()+10){				
-						if(y>=cur.getY() && y<=cur.getY()+10){
-							if(brushblocktype=="ArmorBlock" || brushblocktype=="HeavyBlockArmorBlock"){
-								cur.activate(getCurrentColor());
-								cur.setType(brushblocktype);
-								if(symmetry[0]){
-								//left right symmetry
-								//(j,i)								
-									Block opposite = listrows.elementAt(i).elementAt(width~/10-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);							
-								}
-								if(symmetry[1]){
-								//top bottom symmetry
-									Block opposite = listrows.elementAt(height~/10-i).elementAt(j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-								}
-								if(symmetry[2]){
-								//axis symmetry
-									Block opposite = listrows.elementAt(height~/10-i).elementAt(width~/10-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-								}
-							}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){
-								cur.activate(getCurrentColor());
-								cur.setType(brushblocktype);
-								cur.rotate();
-								if(symmetry[0]){
-								//left right symmetry
-								//(j,i)								
-									Block opposite = listrows.elementAt(i).elementAt(width~/10-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
-								if(symmetry[1]){
-								//top bottom symmetry
-									Block opposite = listrows.elementAt(height~/10-i).elementAt(j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
-								if(symmetry[2]){
-								//axis symmetry
-									Block opposite = listrows.elementAt(height~/10-i).elementAt(width~/10-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
-							}
-						
-							break;
-						}
-					}
-				}
-			}
-			draw_board();
+			boards.elementAt(boardnumber).setAt(x, y);
 		}
-
+		boards.elementAt(boardnumber).draw(1);
 	});
 	
 	middle_canvas.onMouseMove.listen((MouseEvent e){
@@ -148,58 +78,19 @@ void main() {
 			if(brushing){
 				var x = (e.offset.x);
 				var y = (e.offset.y);
-				for(var i = 0; i<brushlist.length; i++){
-					List<Block> blocks = brushlist.elementAt(i);
-					for(var j = 0; j<blocks.length; j++){
-						Block cur = blocks.elementAt(j);
-						if(x>=cur.getX()&& x<=cur.getX()+10){				
-							if(y>=cur.getY() && y<=cur.getY()+10){
-								if(!cur.changed()){
-									cur.activate(getCurrentColor());
-									cur.setType(brushblocktype);
-									cur.change(true);
-									if(symmetry[0]){
-									//left right symmetry
-									//(j,i)								
-										Block opposite = brushlist.elementAt(i).elementAt(width~/10-j);
-										opposite.activate(getCurrentColor());
-										opposite.setType(brushblocktype);
-										opposite.change(true);
-									}
-									if(symmetry[1]){
-								//top bottom symmetry
-										Block opposite = brushlist.elementAt(height~/10-i).elementAt(j);
-										opposite.activate(getCurrentColor());
-										opposite.setType(brushblocktype);
-										opposite.change(true);
-									}
-									if(symmetry[2]){
-									//axis symmetry
-										Block opposite = brushlist.elementAt(height~/10-i).elementAt(width~/10-j);
-										opposite.activate(getCurrentColor());
-										opposite.setType(brushblocktype);
-										opposite.change(true);
-									}
-									
-								}
-								break;
-							}
-						}
-					}
-				}
-				draw_brush_board();
+				boards.elementAt(boardnumber).setAt(x, y);
 			}
 		}
+		boards.elementAt(boardnumber).draw(1);
 	});
 	
 	document.getElementById("clearboards").onClick.listen((MouseEvent e){
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("clearboardscontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-	 		boards = new List<List>();
+	 		boards = new List<Board>();
 	 		boardnumber = 0;
 		 	init_board();
-		 	brushlist = rows;
 	 		draw_board();
 	 		draw_side_boards();
 	 		confirmButton.remove();
@@ -215,9 +106,8 @@ void main() {
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("clearboardcontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-			boards.remove(rows);
-			init_board();
-			brushlist = rows;
+			boards.remove(boards.elementAt(boardnumber));
+			boards.insert(boardnumber, new Board(width~/10, height~/10));
 			draw_board();
 			confirmButton.remove();
 		});
@@ -229,18 +119,34 @@ void main() {
 		});
 	});
 	
+//	document.getElementById("import").onChange.listen((Event e){
+//		//only for importing atm
+//		File f = document.getElementById("import").files[0];
+//		print(f.size);
+//		print(f.type);
+//		if(f.type.toString()=="text/xml"){
+//			var reader = new FileReader();
+//			reader.onLoadEnd.listen((Event e){
+////				print(reader.result);
+////				if(reader.result.toString().contains("SHIPBUILDERv0.2")){
+//					//start loading the file
+//					var lines = reader.result.toString().split("\n");
+//					print(lines[0]);					
+////				}
+//			});
+//			reader.readAsText(f.slice(0,f.size));
+//		}else{
+//			//throw error
+//		}
+//	});
+	
 
 	
 	document.getElementById("fillboard").onClick.listen((MouseEvent e){
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("fillboardcontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-			for(var i=0; i<rows.length; i++){
-				List<Block> blocks = rows.elementAt(i);
-				for(var j=0; j<blocks.length; j++){
-					blocks.elementAt(j).activate(getCurrentColor());
-				}
-			}
+			boards.elementAt(boardnumber).fill();			
 			draw_board();
 			confirmButton.remove();
 		});
@@ -258,15 +164,13 @@ void main() {
 		Element confirmButton = mkConfirmButton();
 		document.getElementById("insertboardcontainer").nodes.add(confirmButton);
 		confirmButton.onClick.listen((MouseEvent e){
-			rows = mkBlankBoard();
 			if(boardnumber>0){
-				boards.insert(boardnumber, rows);
+				boards.insert(boardnumber, new Board(width~/10,height~/10));
 				draw_board();
 			}else{
-				boards.insert(0, rows);
+				boards.insert(0, new Board(width~/10,height~/10));
 				draw_board();
 			}
-			brushlist = rows;
 			draw_side_boards();
 			
 			confirmButton.remove();
@@ -329,18 +233,10 @@ void main() {
 		print(e.keyCode);
 		if(e.keyCode == 37){
 			//previous board
-			print("Previous Button Clicked");
-			if(boardnumber>0){
-				boardnumber--;
-				draw_board();
-				draw_side_boards();
-			}
+			previous_board();
 		}else if(e.keyCode == 39){
 			//next board
-			print("Next Button Clicked");
-			boardnumber++;
-			init_board();
-			draw_side_boards();
+			next_board();
 		}else if(e.keyCode == 48){
 			//number 0 erase
 			setCurrentColor("Erase");
@@ -360,21 +256,10 @@ void main() {
 			setCurrentColor("Blue");
 		}else if(e.keyCode== 68){
 			//dump debug
-			print(boards);
-			for(var i =0; i<rows.length; i++){
-				String tmpstring = "";
-				for(var j = 0; j<rows.elementAt(i).length; j++){
-					tmpstring+=(rows.elementAt(i).elementAt(j).active).toString()+", ";
-				}
-				print(tmpstring);
-			}
+			
 		}
 	});
 	
-	Element infodiv = divElement("infodiv");
-	dispboardnum.id = "display";
-	infodiv.children.add(dispboardnum);
-	document.body.nodes.add(infodiv);
 
 }
 
@@ -393,117 +278,40 @@ mkConfirmButton(){
 }
 
 init_board(){
-	rows = mkBlankBoard();
-	boards.add(rows);
+	boards.add(new Board(width~/10, height~/10));
 	draw_board();
-}
-
-List<List> mkBlankBoard(){
-	List<List> tmprows = new List<List>();
-	for(var i = 0; i<height~/10; i++){
-		int rownumber = i*10;
-		List<Block> row = new List<Block>();
-		for(var j = 0; j<width~/10; j++){
-			row.add(new Block(j*10,rownumber, "White", brushblocktype));
-		}
-		tmprows.add(row);
-	}
-	return tmprows;
 }
 
 draw_board(){
 	//main board
-	clearBoard(middle_context);
-	List<List> middlelist = boards.elementAt(boardnumber);
-	for(var i=0; i<middlelist.length; i++){
-		List<Block> blocks = middlelist.elementAt(i);
-		for(var j = 0; j<blocks.length; j++){
-			blocks.elementAt(j).draw(true, middle_context);
-		}
-		
-	}
+	boards.elementAt(boardnumber).draw(1);
 	
-	dispboardnum.innerHtml = "Boardnumber: "+boardnumber.toString();
-}
-
-draw_brush_board(){
-	//	main board
-	clearBoard(middle_context);
-	for(var i=0; i<brushlist.length; i++){
-		List<Block> blocks = brushlist.elementAt(i);
-		for(var j=0;j<blocks.length; j++){
-			blocks.elementAt(j).draw(true, middle_context);
-		}
-	}
-
 	dispboardnum.innerHtml = "Boardnumber: "+boardnumber.toString();
 }
 
 draw_side_boards(){
 	//left board
-	clearBoard(left_context);
 	if(boardnumber>0){
-		List<List> leftlist = boards.elementAt(boardnumber-1);
-		for(var i = 0; i<leftlist.length; i++){
-			List<Block> blocks = leftlist.elementAt(i);
-			for(var j=0; j<blocks.length; j++){
-				blocks.elementAt(j).draw(false, left_context);
-			}
-		}
+		boards.elementAt(boardnumber-1).draw(0);		
 	}else{
-	//clear board method
-		clearBoard(left_context);
+		Board.clear(0);
 	}
-
 	//right board
-	clearBoard(right_context);
 	if(boards.length>boardnumber+1){
-		List<List> rightlist = boards.elementAt(boardnumber+1);
-		for(var i = 0; i<rightlist.length; i++){
-			List<Block> blocks = rightlist.elementAt(i);
-			for(var j = 0; j<blocks.length; j++){
-				blocks.elementAt(j).draw(false, right_context);
-			}
-		}
+		boards.elementAt(boardnumber+1).draw(2);		
+	}else{
+		Board.clear(2);
 	}
 }
 
-DivElement divElement(String ID){
-	var div = new Element.html('<div />');
-	div.id = ID;
-	document.body.nodes.add(div);
-	return div;
-}
 
-Element side_canvas(Element addTo, String side){
-	var canvas = new Element.html('<canvas/>');
-	canvas.width = width~/2;
-	canvas.height = height~/2;
-	canvas.id = side;
-	addTo.children.add(canvas);
-	return canvas;
-}
-
-Element DrawingCanvas(Element addTo){
-	var canvas = new Element.html('<canvas/>');
-	canvas.width = width;
-	canvas.height = height;
-	canvas.id = "middle";
-	addTo.children.add(canvas);
-	return canvas;
-}
 
 String getFileName(){
 	return document.getElementById("filename").value;
 }
 
-
-Element export_board_button(Element addTo){
-	var button = new Element.html("<button>");
-	button.type = "button";
-	button.innerHtml = "Export";
-	button.id = "export";
-	button.onClick.listen((MouseEvent e){
+export_board_button(){
+	document.getElementById("export").onClick.listen((MouseEvent e){
 		if(!exporting){
 			print("Export Button Clicked");
 			export_board();
@@ -517,42 +325,23 @@ Element export_board_button(Element addTo){
 			exporting = true;
 		}
 	});
-	addTo.children.add(button);
-	
-	return button;
 }
 
-Element next_board_button(Element addTo){
-	var button = new Element.html("<button>");
-	button.type = "button";
-	button.innerHtml = "Next";
-	button.id = "next";
-	button.onClick.listen((MouseEvent e){
-		print("Next Button Clicked");
-		boardnumber++;
-		init_board();
+next_board(){
+	print("Next Button Clicked");
+	boardnumber++;
+	init_board();
+	draw_side_boards();
+	draw_board();
+}
+
+previous_board(){
+	print("Previous Button Clicked");
+	if(boardnumber>0){
+		boardnumber--;
 		draw_side_boards();
-	});
-	addTo.children.add(button);
-	
-	return button;
-	
-}
-
-Element previous_board_button(Element addTo){
-	var button = new Element.html("<button>");
-	button.type = "button";
-	button.innerHtml = "Previous";
-	button.id = "previous";
-	button.onClick.listen((MouseEvent e){	
-		print("Previous Button Clicked");
-		if(boardnumber>0){
-			boardnumber--;
-			draw_board();
-			draw_side_boards();
-		}
-	});
-	addTo.children.add(button);
+		draw_board();
+	}
 }
 
 getPosition(String xyz){
@@ -560,6 +349,14 @@ getPosition(String xyz){
 }
 
 String export_board(){
+	xyzString(String x, String y, String z){
+		String tmps = "";
+		tmps+="<X>"+x+"</X>\n";
+		tmps+="<Y>"+y+"</Y>\n";
+		tmps+="<Z>"+z+"</Z>\n";
+		return tmps;
+	}
+	
 	//have to export to xml
 	var numboards = boards.length;
 	int progress = 0;
@@ -569,141 +366,95 @@ String export_board(){
 	var rng = new Random();
 	
 	//returns string to download, can be complete file or snippet
-	xml = '<MyObjectBuilder_EntityBase xsi:type="MyObjectBuilder_CubeGrid">\n'
+	xml = '<!-- SHIPBUILDERv0.2 -->' 
+	'<MyObjectBuilder_EntityBase xsi:type="MyObjectBuilder_CubeGrid">\n'
 	'<EntityId>'+(2403842243863731929+rng.nextInt(999)).toString()+'</EntityId>\n' //needs to be randomized?
 	'<PersistentFlags>CastShadows InScene</PersistentFlags>\n'
 	'<PositionAndOrientation>\n'
-	'<Position>\n'
-	'<X>'+getPosition('x')+'.00000000</X>\n' //it appears to need some kind of position with decimals
-	'<Y>'+getPosition('y')+'.00000000</Y>\n'
-	'<Z>'+getPosition('z')+'.00000000</Z>\n'
-	'</Position>\n'
-	'<Forward>\n'
-	'<X>0.20000000</X>\n' //decimals needed here too?
-	'<Y>0.30000000</Y>\n'
-	'<Z>0.40000000</Z>\n'
-	'</Forward>\n'
-	'<Up>\n'
-	'<X>0.30000000</X>\n'
-	'<Y>0.20000000</Y>\n'
-	'<Z>0.40000000</Z>\n'
-	'</Up>\n'
+	'<Position>\n';
+	xml+=xyzString(getPosition('x')+".00000000",getPosition('y')+".00000000",getPosition('z')+".00000000");
+	xml+= '</Position>\n<Forward>\n';
+	xml+=xyzString("0.20000000","0.30000000","0.40000000");
+	xml+='</Forward>\n<Up>\n';
+	xml+=xyzString("0.20000000","0.30000000","0.40000000");
+	xml+='</Up>\n'
 	'</PositionAndOrientation>\n'
 	'<GridSizeEnum>'+gridsize+'</GridSizeEnum>\n'
 	'<CubeBlocks>\n'	
 	;
-	var activeblocks = 0;
+	int activeblocks = 0;
 	for(var i=0; i<boards.length; i++){
-		List<List> boardlist = boards.elementAt(i);
-			for(var j=0; j<boardlist.length; j++){
-				List<Block> rows = boardlist.elementAt(j);
-				for(var k=0; k<rows.length; k++){
-					Block square = rows.elementAt(k);
-					if(square.isActive()){
-						activeblocks++;
-					}
-				}
-			}
+		Board board = boards.elementAt(i);
+		activeblocks+=board.activeBlocks();			
 	}
 	print("ActiveBlocks: "+activeblocks.toString());
 
 	for(var i=0; i<boards.length; i++){
-		List<List> boardlist = boards.elementAt(i);
-		for(var j=0; j<boardlist.length; j++){
-			List<Block> rows = boardlist.elementAt(j);
-			for(var k=0; k<rows.length; k++){
+		Board board = boards.elementAt(i);
+		for(var j=0; j<width~/10; j++){
+			for(var k=0; k<height~/10; k++){
 				Timer t = new Timer(new Duration(milliseconds:i*j*k+2), (){
-				Block square = rows.elementAt(k);
+				Block square = board.getAt(j,k);
 				if(square.isActive()){
 					xml += '<MyObjectBuilder_CubeBlock>\n';
-					xml += '<SubtypeName>'+square.getType()+'</SubtypeName>\n';
+					xml += '<SubtypeName>'+square.getType(blocksize)+'</SubtypeName>\n';
 					xml += '<EntityId>0</EntityId>\n';
 					xml += '<PersistentFlags>None</PersistentFlags>\n';
 					xml += '<Min>\n';
-					xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
-					xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
-					xml += '<Z>'+i.toString()+'</Z>\n';
+					xml += xyzString((square.getX()~/10).toString(), (square.getY()~/10).toString(), i.toString());
 					xml += '</Min>\n';
 					xml += '<Max>\n';
-					xml += '<X>'+(square.getX()~/10).toString()+'</X>\n';
-					xml += '<Y>'+(square.getY()~/10).toString()+'</Y>\n';
-					xml += '<Z>'+i.toString()+'</Z>\n';
+					xml += xyzString((square.getX()~/10).toString(), (square.getY()~/10).toString(), i.toString());
 					xml += '</Max>\n';
 					xml += '<Orientation>\n';
 					if(square.getBlockType()=="ArmorBlock" || square.getBlockType()=="HeavyBlockArmorBlock"){
-						xml += '<X>0</X>\n';
-						xml += '<Y>0</Y>\n';
-						xml += '<Z>0</Z>\n';
+						xml += xyzString("0", "0", "0");
 						xml += '<W>1</W>\n';
 					}else if(square.getBlockType()=="ArmorSlope" || square.getBlockType()=="HeavyBlockArmorSlope"){
 						int rot = square.getRotation();
 						if(rot == 0){
 							//correct
-							xml += '<X>0.5</X>\n';
-							xml += '<Y>-0.5</Y>\n';
-							xml += '<Z>0.5</Z>\n';
+							xml += xyzString("0.5", "-0.5", "0.5");
 							xml += '<W>0.5</W>\n';
 						}else if(rot==1){
 							//correct
-							xml += '<X>0.5</X>\n';
-							xml += '<Y>0.5</Y>\n';
-							xml += '<Z>-0.5</Z>\n';
+							xml += xyzString("0.5", "0.5", "-0.5");
 							xml += '<W>0.5</W>\n';
 						}else if(rot==2){
 							//correct
-							xml += '<X>0.5</X>\n';
-							xml += '<Y>0.5</Y>\n';
-							xml += '<Z>0.5</Z>\n';
+							xml += xyzString("0.5", "0.5", "0.5");
 							xml += '<W>-0.5</W>\n';
 						}else if(rot==3){
 							//correct
-							xml += '<X>0.5</X>\n';
-							xml += '<Y>-0.5</Y>\n';
-							xml += '<Z>-0.5</Z>\n';
+							xml += xyzString("0.5", "-0.5", "-0.5");
 							xml += '<W>-0.5</W>\n';
 						}else if(rot==4){
 							//correct
-							xml += '<X>-0.707106769</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>0</Z>\n';
+							xml += xyzString("-0.707106769","0","0");
 							xml += '<W>0.707106769</W>\n';
 						}else if(rot==5){
 							//correct
-							xml += '<X>1</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>0</Z>\n';
+							xml += xyzString("1", "0", "0");
 							xml += '<W>0</W>\n';
 						}else if(rot==6){
 							//correct
-							xml += '<X>0</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>0</Z>\n';
+							xml += xyzString("0", "0", "0");
 							xml += '<W>1</W>\n';
 						}else if(rot==7){
 							//correct
-							xml += '<X>0.707106769</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>0</Z>\n';
+							xml += xyzString("0.707106769","0","0");
 							xml += '<W>0.707106769</W>\n';
-						}else if(rot==8){
-							xml += '<X>0.707106769</X>\n';
-							xml += '<Y>0.707106769</Y>\n';
-							xml += '<Z>0</Z>\n';
+						}else if(rot==8){							
+							xml += xyzString("0.707106769","0.707106769","0");
 							xml += '<W>0</W>\n';
 						}else if(rot==9){
-							xml += '<X>0.707106769</X>\n';
-							xml += '<Y>-0.707106769</Y>\n';
-							xml += '<Z>0</Z>\n';
+							xml += xyzString("0.707106769","-0.707106769","0");
 							xml += '<W>0</W>\n';
 						}else if(rot==10){
-							xml += '<X>0</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>-0.707106769</Z>\n';
+							xml += xyzString("0", "0", "-0.707106769");
 							xml += '<W>0.707106769</W>\n';
 						}else if(rot==11){
-							xml += '<X>0</X>\n';
-							xml += '<Y>0</Y>\n';
-							xml += '<Z>0.707106769</Z>\n';
+							xml += xyzString("0","0", "0.707106769");
 							xml += '<W>0.707106769</W>\n';
 						}					
 					}
@@ -724,14 +475,10 @@ String export_board(){
 		xml+="<IsStatic>false</IsStatic>\n";
 		xml+="<Skeleton />\n";
 		xml+="<LinearVelocity>\n";
-		xml+="<X>0</X>\n";
-		xml+="<Y>0</Y>\n";
-		xml+="<Z>0</Z>\n";
+		xml+=xyzString("0", "0","0");
 		xml+="</LinearVelocity>\n";
 		xml+="<AngularVelocity>\n";
-		xml+="<X>0</X>\n";
-		xml+="<Y>0</Y>\n";
-		xml+="<Z>0</Z>\n";
+		xml+=xyzString("0","0","0");
 		xml+="</AngularVelocity>\n";
 		xml+="<XMirroxPlane xsi:nil=\"true\" />\n";
 		xml+="<YMirroxPlane xsi:nil=\"true\" />\n";
@@ -739,7 +486,8 @@ String export_board(){
 		xml+="</MyObjectBuilder_EntityBase>\n";
 
 		return xml;
-	});
+	});	
+
 }
 
 
@@ -752,13 +500,6 @@ download(String value){
 	document.body.nodes.remove(downloadLink);
 }
 
-clearBoard(CanvasRenderingContext2D context){
-	context.clearRect(0,0,width,height); 
-	context.fillStyle = '#ffffff'; 
-	context.strokeStyle = '#000000'; 
-	context.fillRect(0,0,width,height);
-}
-
 getCurrentColor(){
 	return document.getElementById("color").value;
 }
@@ -767,207 +508,7 @@ setCurrentColor(String color){
 	document.getElementById("color").value = color;
 }
 
-class Block{
-	int x;
-	int y;
-	int rotation = -1;
-	String color = 'White';
-	bool active = false;
-	bool hasBeenChanged = false;
-	String blocktype = "ArmorBlock";
-	
-	static int sqwidth = 10;
-	static int sqheight = 10;
-	
-	Block(int x, int y, String color, String type){
-		this.x = x;
-		this.y = y;
-		this.color = color;
-	}
-	
-	
-	String getType(){
-		if(color=='White'){
-			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
-				//heavy blocks don't need the "Block"
-				return blocksize+blocktype;
-			}else{
-				//other blocks do
-				return blocksize+"Block"+blocktype;
-			}
-		}else{
-			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
-				return blocksize+blocktype+color;
-			}else{
-				return blocksize+"Block"+blocktype+color;
-		}
-		}
-	}
 
-	
-	draw(bool middle, CanvasRenderingContext2D context){
-		context.fillStyle = color;
-		context.setStrokeColorRgb(0, 0, 0, 1);
-		if(active){
-			if(middle){
-				if(blocktype=="ArmorBlock" || blocktype=="HeavyBlockArmorBlock"){
-					context.beginPath();
-					context.rect(this.x,this.y,sqwidth,sqheight);
-					context.fill();	
-					context.closePath();
-				}else if(blocktype=="ArmorSlope" || blocktype=="HeavyBlockArmorSlope"){
-					//move ifs for rotation
-					context.beginPath();
-					Point topleft = new Point(x,y);
-					Point topright = new Point(x+sqwidth, y);
-					Point bottomleft = new Point(x, y+sqheight);
-					Point bottomright = new Point(x+sqwidth, y+sqheight);
-					if(rotation==0){
-						drawTriangleLines(context, bottomleft, bottomright, topright);
-						return;
-					}else if(rotation==1){
-						drawTriangleLines(context, topleft, bottomleft, bottomright);
-						return;
-					}else if(rotation==2){
-						drawTriangleLines(context, topleft, topright, bottomleft);
-						return;
-					}else if(rotation==3){
-						drawTriangleLines(context, topleft, topright, bottomright);
-						return;
-					}else if(rotation==4){
-						//square with line at top
-						context.rect(this.x, this.y, sqwidth, sqheight);	
-						context.setFillColorRgb(255, 255, 255, 1);
-						context.moveTo(x+2, y+2);
-						context.lineTo(x+sqwidth-2, y+2);
-					}else if(rotation==5){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.setFillColorRgb(255, 255,255,1);
-						context.moveTo(x+2, y+sqheight-2);
-						context.lineTo(x+sqwidth-2, y+sqheight-2);
-					}else if(rotation==6){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.fill();
-						context.stroke();
-						context.closePath();						
-						
-						context.beginPath();
-						context.moveTo(x+2, y+2);
-						context.lineTo(x+sqwidth-2, y+2);
-						context.setStrokeColorRgb(255,255,255,1);
-						context.stroke();
-						context.closePath();
-						return;
-					}else if(rotation==7){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.fill();
-						context.stroke();
-						context.closePath();						
-						
-						context.beginPath();
-						context.moveTo(x+2, y+sqheight-2);
-						context.lineTo(x+sqwidth-2, y+sqheight-2);
-						context.setStrokeColorRgb(255,255,255,1);
-						context.stroke();
-						context.closePath();
-						return;
-					}else if(rotation==8){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.setFillColorRgb(255, 255,255,1);
-						context.moveTo(x+2, y+2);
-						context.lineTo(x+2, y+sqheight-2);
-					}else if(rotation==9){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.setFillColorRgb(255, 255,255,1);
-						context.moveTo(x+sqwidth-2, y+2);
-						context.lineTo(x+sqwidth-2, y+sqheight-2);
-					}else if(rotation==10){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.fill();
-						context.stroke();
-						context.closePath();					
-					
-						context.beginPath();
-						context.moveTo(x+2, y+2);
-						context.lineTo(x+2, y+sqheight-2);
-						context.setStrokeColorRgb(255,255,255,1);
-						context.stroke();
-						context.closePath();
-						return;
-					}else if(rotation==11){
-						context.rect(this.x, this.y, sqwidth, sqheight);
-						context.fill();
-						context.stroke();
-						context.closePath();					
-					
-						context.beginPath();
-						context.moveTo(x+sqwidth-2, y+2);
-						context.lineTo(x+sqwidth-2, y+sqheight-2);
-						context.setStrokeColorRgb(255,255,255,1);
-						context.stroke();
-						context.closePath();
-						return;
-					}
-					context.fill();
-					context.stroke();
-					context.closePath();
-				}
-			}else{
-				if(blocktype=="ArmorBlock"){
-					context.beginPath();
-					context.rect(this.x~/2,this.y~/2,sqwidth~/2,sqheight~/2);
-					context.fill();	
-					context.closePath();
-				}else if(blocktype=="ArmorSlope"){
-				
-				}
-			}
-		}
-
-	}
-	
-	drawTriangleLines(CanvasRenderingContext2D context, Point p1, Point p2, Point p3){
-		context.moveTo(p1.x, p1.y);
-		context.lineTo(p2.x, p2.y);
-		context.lineTo(p3.x, p3.y);
-		context.lineTo(p1.x, p1.y);
-		context.fill();
-		context.stroke();
-		context.closePath();
-	}
-	
-	activate(String color){
-		if(color == 'Erase'){
-			//deactivate - color white
-			this.color = 'White';
-			active = false;
-		}else if(color != 'Erase'){			
-			this.color = color;
-			active = true;
-		}
-
-	}
-	
-	rotate(){		
-		if(rotation>=12){
-			rotation = -1;
-			activate("Erase");
-			return;
-		}
-		rotation++;
-	}
-
-	
-	setType(String type){blocktype = type;}	
-	change(bool change){hasBeenChanged = change;}
-	bool changed(){return hasBeenChanged;}
-	getX(){return x;}
-	getY(){return y;}
-	isActive(){return active;}
-	String getBlockType(){return blocktype;}
-	getRotation(){return rotation;}
-	
-}
 /*TODO:
  * saving support for full maps
  * import from file/text
@@ -977,7 +518,6 @@ class Block{
  * webgl 3d rendering
  * find way to set value without throwing warnings
  * neighbor lists (calculate at creation)
- * nicer files (not one big massive one)
  * 
  *  acceptable color list
  *  Yellow
