@@ -2,8 +2,8 @@ import 'dart:html';
 import 'dart:math';
 import 'dart:async';
 
-import 'block.dart';
-import 'board.dart';
+import 'cube.dart' show CubeBlock;
+import 'board.dart' show Board;
 
 int width = 800;
 int height = 800;
@@ -256,7 +256,12 @@ void main() {
 			setCurrentColor("Blue");
 		}else if(e.keyCode== 68){
 			//dump debug
-			
+			for(int i=0; i<boards.length; i++){
+				Board b = boards.elementAt(i);
+				for(int j=0; j<b.length(); j++){
+					print(b.getAt(i, j).active);
+				}
+			}
 		}
 	});
 	
@@ -394,7 +399,7 @@ String export_board(){
 		for(var j=0; j<width~/10; j++){
 			for(var k=0; k<height~/10; k++){
 				Timer t = new Timer(new Duration(milliseconds:i*j*k+2), (){
-				Block square = board.getAt(j,k);
+				var square = board.getAt(j,k);
 				if(square.isActive()){
 					xml += '<MyObjectBuilder_CubeBlock>\n';
 					xml += '<SubtypeName>'+square.getType(blocksize)+'</SubtypeName>\n';

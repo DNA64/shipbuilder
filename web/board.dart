@@ -1,6 +1,9 @@
 import 'dart:html';
 
-import 'block.dart';
+import 'cube.dart';
+import 'slope.dart' show Slope;
+import 'block.dart' show Block;
+import 'empty.dart' show Empty;
 
 import 'shipbuilder.dart';
 
@@ -19,22 +22,24 @@ class Board{
 		List<List> tmprows = new List<List>();
 		for(var i = 0; i<heightinblocks; i++){
 			int rownumber = i*10;
-			List<Block> row = new List<Block>();
+			List<Object> row = new List<CubeBlock>();
 			for(var j = 0; j<widthinblocks; j++){
-				row.add(new Block(j*10,rownumber, "White", brushblocktype));
+				row.add(new Empty(j*10,rownumber));
 			}
 			tmprows.add(row);
 		}
 		rows = tmprows;
 	}
 	
-	fillBoard(){
+	fill(){
 		List<List> tmprows = new List<List>();
 		for(var i = 0; i<heightinblocks; i++){
 			int rownumber = i*10;
-			List<Block> row = new List<Block>();
+			List<CubeBlock> row = new List<CubeBlock>();
 			for(var j = 0; j<widthinblocks; j++){
-				row.add(new Block(j*10,rownumber, getCurrentColor(), brushblocktype));
+				Block b = new Block(j*10,rownumber, getCurrentColor());
+				b.activate(getCurrentColor());
+				row.add(b);
 			}
 			tmprows.add(row);
 		}
@@ -44,14 +49,15 @@ class Board{
 	draw(int pos){
 		clear(pos);
 		for(var i = 0; i<rows.length; i++){
-			List<Block> blocks = rows.elementAt(i);
+			List<CubeBlock> blocks = rows.elementAt(i);
 			for(int j = 0; j<blocks.length; j++){
+				var cur = blocks.elementAt(j);			
 				if(pos == 0){
-					blocks.elementAt(j).draw(false, left_context);
+					cur.draw(false, left_context);
 				}else if(pos==1){
-					blocks.elementAt(j).draw(true, middle_context);
+					cur.draw(true, middle_context);
 				}else if(pos==2){
-					blocks.elementAt(j).draw(false, right_context);
+					cur.draw(false, right_context);
 				}
 				
 			}
@@ -75,22 +81,12 @@ class Board{
 		context.fillRect(0,0,width,height);
 	}
 	
-	fill(){
-		for(int i = 0; i<rows.length; i++){
-			List<Block> row = rows.elementAt(i);
-			for(int j = 0; j<row.length; j++){
-				Block cur = row.elementAt(j);				
-				cur.activate(getCurrentColor());
-			}
-		}
-	}
-	
 	int activeBlocks(){
 		int activeblocks = 0;
 		for(int i = 0; i<rows.length; i++){
-			List<Block> row = rows.elementAt(i);
+			List<CubeBlock> row = rows.elementAt(i);
 			for(var k=0; k<rows.length; k++){
-				Block square = row.elementAt(k);
+				CubeBlock square = row.elementAt(k);
 				if(square.isActive()){
 					activeblocks++;
 				}
@@ -99,7 +95,7 @@ class Board{
 		return activeblocks;
 	}
 	
-	Block getAt(int x, int y){
+	CubeBlock getAt(int x, int y){
 		return rows.elementAt(y).elementAt(x);
 	}
 	
@@ -109,63 +105,98 @@ class Board{
 	
 	setAt(int x, int y){
 		for(var i = 0; i<rows.length; i++){
-			List<Block> row = rows.elementAt(i);
+			List<CubeBlock> row = rows.elementAt(i);
 			for(var j = 0; j<row.length; j++){
-			//j = block number in row
-				Block cur = row.elementAt(j);
+//			//j = block number in row
+				var cur = row.elementAt(j);
 				if(x>=cur.getX()&& x<=cur.getX()+10){				
 					if(y>=cur.getY() && y<=cur.getY()+10){
 						if(brushblocktype=="ArmorBlock" || brushblocktype=="HeavyBlockArmorBlock"){
-							cur.activate(getCurrentColor());
-							cur.setType(brushblocktype);
-							if(symmetry[0]){
-								//				left right symmetry
-								//			(j,i)								
-								Block opposite = rows.elementAt(i).elementAt(widthinblocks-j);
-								opposite.activate(getCurrentColor());
-								opposite.setType(brushblocktype);							
-							}
-							if(symmetry[1]){
-								//	top bottom symmetry
-								Block opposite = rows.elementAt(heightinblocks-i).elementAt(j);
-								opposite.activate(getCurrentColor());
-								opposite.setType(brushblocktype);
-							}
-							if(symmetry[2]){
-							//	axis symmetry
-								Block opposite = rows.elementAt(heightinblocks-i).elementAt(widthinblocks-j);
-								opposite.activate(getCurrentColor());
-								opposite.setType(brushblocktype);
-							}
-							}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){
+							if(cur is Block){
 								cur.activate(getCurrentColor());
 								cur.setType(brushblocktype);
-								cur.rotate();
-								if(symmetry[0]){
+								
+							}else{
+								rows.elementAt(i).remove(cur);
+								Block b = new Block(cur.getX(),cur.getY(), getCurrentColor());
+								b.activate(getCurrentColor());
+								b.setType(brushblocktype);
+								rows.elementAt(i).insert(j, b);
+								
+							}
+							if(symmetry[0]){
+								//left right symmetry
+								//(j,i)								
+								var opposite = rows.elementAt(i).elementAt(widthinblocks-j);									
+								Block ob = new Block(opposite.getX(), opposite.getY(), getCurrentColor());
+								row.removeAt(widthinblocks-j);
+								ob.activate(getCurrentColor());
+								ob.setType(brushblocktype);								
+								row.insert(widthinblocks-j,ob);						
+							}
+							if(symmetry[1]){
+								//top bottom symmetry
+								var opposite = rows.elementAt(heightinblocks-i).elementAt(j);									
+								Block ob = new Block(opposite.getX(), opposite.getY(), getCurrentColor());
+								rows.elementAt(heightinblocks-i).removeAt(j);
+								ob.activate(getCurrentColor());
+								ob.setType(brushblocktype);								
+								rows.elementAt(heightinblocks-i).insert(j,ob);	
+							}
+							if(symmetry[2]){
+								var opposite = rows.elementAt(heightinblocks-i).elementAt(widthinblocks-j);									
+								Block ob = new Block(opposite.getX(), opposite.getY(), getCurrentColor());
+								rows.elementAt(heightinblocks-i).removeAt(widthinblocks-j);
+								ob.activate(getCurrentColor());
+								ob.setType(brushblocktype);								
+								rows.elementAt(heightinblocks-i).insert(widthinblocks-j,ob);	
+							}						
+							}else if(brushblocktype=="ArmorSlope" || brushblocktype=="HeavyBlockArmorSlope"){								
+								if(cur is Slope){									
+									cur.activate(getCurrentColor());
+									cur.setType(brushblocktype);
+									cur.rotate();
+									if(symmetry[0]){
 									//left right symmetry
-									//			(j,i)								
-									Block opposite = rows.elementAt(i).elementAt(widthinblocks-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
-								if(symmetry[1]){
-									//	top bottom symmetry
-									Block opposite = rows.elementAt(heightinblocks-i).elementAt(j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
-								if(symmetry[2]){
-								//axis symmetry
-									Block opposite = rows.elementAt(heightinblocks-i).elementAt(widthinblocks-j);
-									opposite.activate(getCurrentColor());
-									opposite.setType(brushblocktype);
-									opposite.rotate();
-								}
+									//(j,i)								
+										var opposite = rows.elementAt(i).elementAt(widthinblocks-j);									
+										Slope os = new Slope(opposite.getX(), opposite.getY(), getCurrentColor());
+										row.removeAt(widthinblocks-j);
+										os.activate(getCurrentColor());
+										os.setType(brushblocktype);
+										os.rotate();
+										row.insert(widthinblocks-j,os);						
+									}
+									if(symmetry[1]){
+									//top bottom symmetry
+										var opposite = rows.elementAt(heightinblocks-i).elementAt(j);									
+										Slope os = new Slope(opposite.getX(), opposite.getY(), getCurrentColor());
+										rows.elementAt(heightinblocks-i).removeAt(j);
+										os.activate(getCurrentColor());
+										os.setType(brushblocktype);
+										os.rotate();
+										rows.elementAt(heightinblocks-i).insert(j,os);	
+									}
+									if(symmetry[2]){
+										var opposite = rows.elementAt(heightinblocks-i).elementAt(widthinblocks-j);									
+										Slope os = new Slope(opposite.getX(), opposite.getY(), getCurrentColor());
+										rows.elementAt(heightinblocks-i).removeAt(widthinblocks-j);
+										os.activate(getCurrentColor());
+										os.setType(brushblocktype);
+										os.rotate();
+										rows.elementAt(heightinblocks-i).insert(widthinblocks-j,os);	
+									}
+									
+							}else{
+							rows.elementAt(i).remove(cur);
+							Slope s = new Slope(cur.getX(), cur.getY(), getCurrentColor());
+							s.activate(getCurrentColor());
+							s.setType(brushblocktype);
+							s.rotate();
+							rows.elementAt(i).insert(j, s);							
 						}
-	
-						break;
+							break;
+						}
 					}
 				}
 			}
