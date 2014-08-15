@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>How to use ShipBuilder!</title>
+<style>
+body{font-family:arial, sans-serif;}
+	.warning{color:red; text-indent:20px;}
+	.question{color:blue;}
+	.answer{color:green; text-indent:40px;}
+</style>
+</head>
+<body>
+<h1>General FAQ</h1>
+<p class='question'>
+	What is this written in?
+</p>
+<p class='answer'>
+	<a href='http://dartlang.org'>Dart</a> Google's javascript replacement.
+</p>
+<p class='question'>
+Where can I see the source for this page?
+</p>
+<p class='answer'>
+	On my <a href='https://github.com/sebastiansam55/shipbuilder'>github page</a>
+</p>
+<p class='question'>
+	Why does everything not fit on my screen?
+</p>
+<p class='answer'>
+	I designed and tested on a 1920x1080 screen, and I am lazy
+</p>
+<p class='question'>
+	Why does this page look like shit?
+</p>
+<p class='answer'>
+	<span title='fuck off'>You can fix it if you want</span>
+</p>
+<h1>Drawing</h1>
+<p>
+The Canvas is a 80x80 blocks ingame (actual size 800x800px)
+</p>
+<p>
+To draw a image simply click any where on the white part of the screen and move 
+your mouse around, you can check the symmetry boxes to make some very cool patterns.
+</p>
+<p>
+If you want to paint pixel by pixel you can select the "dot mode"
+</p>
+<p>
+You can select a color by using the RGB sliders on the right
+</p>
+<h1>Boards</h1>
+<p>
+Boards are the third dimension, you can navigate them by using the arrow keys or
+ the "next" and "previous" buttons at the bottom of the page
+</p>
+<p>
+Fill board will fill the current board with the selected color
+</p>
+<p>
+Clear board will clear the current board
+</p>
+<p>
+Clear boards will clear all of the boards
+</p>
+<p>
+Insert board will insert a board inbetween the left and center board
+</p>
+
+<h1>Importing an image</h1>
+<p>
+The size of the image <b>HAS</b> to be less than 80x80px so it will fit on the canvas
+</p>
+<p>
+It should also probably be a PNG, I haven't tested other file formats as throughly
+(or at all)
+</p>
+<p class='warning'>
+There is no visible progress bar for importing an image, just be patient, if it 
+takes too long there might be some thing else wrong
+</p>
+<p>
+For best visual fidelity you should change your block type to "blastdoor" 
+(before importing your image), regular armor blocks tend to have lots of 
+separators between blocks that break up the look of the image
+</p>
+
+<h1>Exporting</h1>
+<p>
+Time and size of file will of course vary depending on how many boards and blocks
+you have to export.
+</p>
+<p class='warning'>
+There is also currently no progress bar for exporting
+</p>
+<p>
+The x,y,z sliders and for setting the position of the object in the SE world
+</p>
+<p>
+In order to add your exported ship to a save file (BACK THEM UP FIRST) you need 
+to find where they are saved (%appdata%\SpaceEngineers\[etc.]) and open up the 
+.sbs file of the world you want to add your ship to (seriously you should use a
+ empty world and copy-paste to the world you want, this will avoid conflicts with positioning or whatever)
+ You'll want to copy-paste the contents of the export file between the last "&lt;/MyObjectBuilder_EntityBase&gt;"
+ and the last (there should only be one) "&lt;/SectorObjects&gt;". Save the file and reload the world
+ You might have to look around a bit but you should be able to spot it.
+</p>
+</body>
+</html>
