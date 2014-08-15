@@ -1,5 +1,5 @@
 name: shipbuilder
-description: A sample web application
+description: SpaceEngineers ShipBuilder
 dependencies:
   browser: any
   xml: ">=2.0.0 <3.0.0"
