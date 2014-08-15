@@ -1,14 +1,14 @@
 import 'dart:html';
+import 'dart:math';
+import 'globals.dart';
 
 abstract class CubeBlock{
 	int x;
 	int y;
-	String color = 'White';
+	double r,g,b;
+	num h,s,v;
 	bool active = false;
 	String blocktype = "ArmorBlock";
-	
-	int sqwidth = 10;
-	int sqheight = 10;
 	
 	CubeBlock.make(int x, int y){
 		this.x = x;
@@ -19,44 +19,25 @@ abstract class CubeBlock{
 	
 	}
 	
-	String getType(String blocksize){
-		if(color=='White'){
-			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
-				//heavy blocks don't need the "Block"
-				return blocksize+blocktype;
-			}else{
-				//other blocks do
-				return blocksize+"Block"+blocktype;
-			}
-		}else{
-			if(blocktype=="HeavyBlockArmorBlock" || blocktype=="HeavyBlockArmorSlope"){
-				return blocksize+blocktype+color;
-			}else{
-				return blocksize+"Block"+blocktype+color;
-		}
-		}
-	}
-
 	
 	draw(bool middle, CanvasRenderingContext2D context){}
 	
-	activate(String color){
-		if(color == 'Erase'){
-			//deactivate - color white
-			this.color = 'White';
+	//true to turn on 
+	//false to turn off
+	activate(bool f){
+		if(!f){
 			active = false;
-		}else if(color != 'Erase'){			
-			this.color = color;
+		}else if(f){			
 			active = true;
 		}
-
 	}
 	
 	setType(String type){blocktype = type;}	
 	getX(){return x;}
 	getY(){return y;}
+	getR(){return r;}
+	getG(){return g;}
+	getB(){return b;}
 	isActive(){return active;}
-	String getBlockType(){return blocktype;}
-
-	
+	String getBlockType(){return blocktype;}	
 }

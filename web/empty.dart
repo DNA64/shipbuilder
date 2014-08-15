@@ -1,3 +1,5 @@
+library empty;
+
 import 'cube.dart' show CubeBlock;
 
 class Empty extends CubeBlock{

@@ -20,6 +20,14 @@ canvas{
 	display: block;
 }
 
+.middlediv{
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 0;
+	padding-right: 0;
+	display: block;
+}
+
 #previous{
 		float:left;
 }

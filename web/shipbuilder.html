@@ -1,117 +1,119 @@
 <!DOCTYPE html>
 
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Shipbuilder</title>
-    <link rel="stylesheet" href="shipbuilder.css">
-    <script type="text/javascript">
-			window.onbeforeunload = function(e) {
-		    return "Sure you want to leave?";
-			};
+<head>
+<meta charset="utf-8">
+<title>Shipbuilder</title>
+<link rel="stylesheet" href="shipbuilder.css">
+<script type="text/javascript">
+//			window.onbeforeunload = function(e) {
+//		    return "Sure you want to leave?";
+//			};
 			
 			function update(which){
 				document.getElementById(which+'count').innerText = document.getElementById(which+'loc').value;	
 			}
+			function updateColor(color){
+				if(color == 'red'){
+					document.getElementById("red_count").innerText = document.getElementById("red").value;
+				}else if(color=='blue'){
+					document.getElementById("blue_count").innerText = document.getElementById("blue").value;
+				}else if(color=='green'){
+					document.getElementById("green_count").innerText = document.getElementById("green").value;
+				}
+			}
+			
+			/*function expandSettings(){
+				var buttonContainer = document.getElementById('blockinput');
+				if(buttonContainer.style.top=='-1000px'){
+					buttonContainer.style.top = '0px';
+				}else{
+					buttonContainer.style.top='-1000px';
+				}
+			}*/
 		</script>
-  </head>
-  <body>
-    <h1>Shipbuilder v0.3</h1>
-    <span id="blockinput">
-    	<select id="color">
-    		<option value="Black">1. Black</option>
-    		<!--<option value="White">White</option>-->
-    		<option value="Yellow">2. Yellow</option>
-    		<option value="Red">3. Red</option>
-    		<option value="Green">4. Green</option>
-    		<option value="Blue">5. Blue</option> 
-    		<option value="Erase">0. Erase</option>   		
-    	</select>
-    	<br/>    	
-    	<select id="shiptype">
-    		<option value="small">Small</option>
-    		<option value="large">Large</option>
-    	</select>
-    	<br />
-    	<select id="blocktype">
-    		<option disabled>---Light Blocks---</option>
-    		<option value="lightarmorblock">ArmorBlock</option>
-    		<option value="lightslopearmorblock">SlopeBlock</option>
-    		<option value="lightarmorcorner">ArmorCorner</option>
-    		<option disabled>---Heavy Blocks---</option>
-    		<option value="largearmorblock">LargeArmorBlock</option>
-    		<option value="largearmorslope">LargeArmorSlope</option>
-    		<option value="largearmorcorner">LargeArmorCorner</option>
-    		
-    	</select>
-    	<br />
-    	<select id="brushtype">
-    		<option value="constant">Constant</option>
-    		<option value="dot">Dot Mode</option>
-    	</select>
-    	<br />
-    	<span>
-    		<span id="xcount">0</span>
-    		<input type="range" id="xloc" min="-128" max="128" onchange="update('x')" />    		
-    	</span>
-    	<br />
-    	<span>
-    		<span id="ycount">0</span>
-    		<input type="range" id="yloc" min="-128" max="128" onchange="update('y')" />    		
-    	</span>
-    	<br />
-    	<span>
-    		<span id="zcount">0</span>
-    		<input type="range" id="zloc" min="-128" max="128" onchange="update('z')" />    		
-    	</span>
-    	<br />
-    	<span id="leftrightsymmetrycontainer">
-    		<input type="checkbox" id="leftrightsymmetry" value="leftright" />LeftRight Symmetry
-    	</span>
-    	<br />
-    	<span id="topbottomsymmetrycontainer">
-    		<input type="checkbox" id="topbottomsymmetry" value="topbottom" />TopBottom Symmetry
-    	</span>
-    	<br />
-    	<span id="axissymmetrycontainer">
-    		<input type="checkbox" id="axissymmetry" value="axis" />Axis Symmetry
-    	</span>
-    	<br />
-    	<span id="fillboardcontainer">
-    		<input type="button" id="fillboard" value="Fill Board" />
-    	</span>
-    	<br />
-    	<span id="insertboardcontainer">
-    		<input type="button" id="insertboard" value="Insert Board" />
-    	</span>
-    	<br />
-    	<span id="clearboardscontainer">	
-    		<input type="button" id="clearboards" value="Clear Boards" />
-    	</span>    	
-    	<br />
-    	<span id="clearboardcontainer">
-    		<input type="button" id="clearboard" value="Clear Board" />
-    	</span>
-    	<br />
-    </span>
-    
-    <progress id="exporting"></progress>
+</head>
+<body>
+	<h1>Shipbuilder v0.9</h1>
+	<span id="blockinput"> <select id="color">
+			<option value="Block">1. Block</option>
+			<option value="Erase">0. Erase</option>
+	</select> <br /> <select id="shiptype">
+			<option value="large">Large</option>
+			<option value="small">Small</option>
+	</select> <br /> <select id="blocktype">
+			<option value="largearmorblock">LargeArmorBlock</option>
+			<option value="blastblock">BlastBlock</option>
+	</select> <br /> <select id="brushtype">
+			<option value="constant">Constant</option>
+			<option value="dot">Dot Mode</option>
+	</select> <br /> <span class="sliderspan"> Red: <input type="range"
+			id="red" min="0" max="255" onchange="updateColor('red')" value="0" />
+			<span id="red_count">0</span>
+	</span> <br /> <span class="sliderspan"> Green: <input type="range"
+			id="green" min="0" max="255" onchange="updateColor('green')"
+			value="0" /> <span id="green_count">0</span>
+	</span> <br /> <span class="sliderspan"> Blue: <input type="range"
+			id="blue" min="0" max="255" onchange="updateColor('blue')" value="0" />
+			<span id="blue_count">0</span>
+	</span> <br /> <span> x: <span id="xcount">0</span> <input
+			type="range" id="xloc" min="-128" max="128" onchange="update('x')" />
+	</span> <br /> <span> y: <span id="ycount">0</span> <input
+			type="range" id="yloc" min="-128" max="128" onchange="update('y')" />
+	</span> <br /> <span> z: <span id="zcount">0</span> <input
+			type="range" id="zloc" min="-128" max="128" onchange="update('z')" />
+	</span> <br /> <span id="leftrightsymmetrycontainer"> <input
+			type="checkbox" id="leftrightsymmetry" value="leftright" />LeftRight
+			Symmetry
+	</span> <br /> <span id="topbottomsymmetrycontainer"> <input
+			type="checkbox" id="topbottomsymmetry" value="topbottom" />TopBottom
+			Symmetry
+	</span> <br /> <span id="axissymmetrycontainer"> <input
+			type="checkbox" id="axissymmetry" value="axis" />Axis Symmetry
+	</span> <br /> <span id="fillboardcontainer"> <input type="button"
+			id="fillboard" value="Fill Board" />
+	</span> <br /> <span id="insertboardcontainer"> <input type="button"
+			id="insertboard" value="Insert Board" />
+	</span> <br /> <span id="clearboardscontainer"> <input type="button"
+			id="clearboards" value="Clear Boards" />
+	</span> <br /> <span id="clearboardcontainer"> <input type="button"
+			id="clearboard" value="Clear Board" />
+	</span> <br /> <!--<input type='button' onclick="expandSettings()" class='rightbutton' value='Hide'>	-->
+	</span>
+
+
+	<!--<progress id="exporting"></progress>
     <br />
-    <input type="text" id="filename" value="SpaceEngineers.xml"/>
-    <br />
-    <input type="file" id="import" />
-    <script type="application/dart" src="shipbuilder.dart"></script>
-    <script src="packages/browser/dart.js"></script>
-    <canvas id="left" ></canvas>
-    <canvas id="middle" ></canvas>
-    <canvas id="right" ></canvas>
-    <div id="buttons">
-    	<button id="previous">Previous</button>
-    	<button id="export">Export</button>
-    	<button id="next">Next</button>
-    </div>
-    <div id="info">
-    	<p id="display"><span id="boardnumber"></span></p>
-    </div>
-  </body>
+    <input type="text" id="filename" value="SpaceEngineers.xml"/>-->
+	<br />
+	<!--
+    <label>
+      Import SE Save File
+      <input type="file" id="importsave" />
+    </label>
+    -->
+	<label> Import Image File (for this board) <input type="file"
+		id="importimage" /> <img src="" id="preview" style="display: none" />
+		<canvas id="hiddencanvas" style="display: none"></canvas>
+	</label>
+	<script type="application/dart" src="shipbuilder.dart"></script>
+	<script src="packages/browser/dart.js"></script>
+	<canvas id="left"></canvas>
+	<div class='middlediv'
+		style='overflow: scoll; width: 800px; height: 800px;'>
+		<canvas id="middle"></canvas>
+	</div>
+	<canvas id="right"></canvas>
+	<div id="buttons">
+		<button id="previous">Previous</button>
+		<button id="export">Export</button>
+		<button id="next">Next</button>
+	</div>
+	<div id="info">
+		<p id="display">
+			<span id="boardnumber"></span>
+		</p>
+		<a href='wtfish.html'>How do I use?</a>
+	</div>
+</body>
 </html>
