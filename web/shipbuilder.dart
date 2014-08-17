@@ -32,7 +32,7 @@ String brushtype = "constant";
 
 Element dispboardnum = document.querySelector("#boardnumber");
 
-//Element progressbar = document.querySelector("#exporting");
+Element progressbar = document.querySelector("#exporting");
 
 bool brushing = false;
 bool exporting = false;
@@ -173,31 +173,39 @@ void main() {
 			print(pixels);
 			int x = 1;
 			int y = 1;
-			for(int i =0; i<pixels.length;i+=4){
-				if((i~/4)%(imageHeight)==0 && i!=0){
-					y+=sqheight;
-					x=1;
-				}
-				//RGBA
-//				print(pixels[i].toString()+", "+pixels[i+1].toString()+", "+pixels[i+2].toString()+", "+pixels[i+3].toString());
-				//set everything but 255,255,255,255 (white or blank)
-				if(pixels[i]==255 && pixels[i+1]==255 && pixels[i+2]==255 && pixels[i+3]==255){
-					//do nothing
-				}else{
+			int tmpCount = 0;
+			progressbar.attributes['max'] = pixels.length.toString();
+			for(int i = 0; i<pixels.length;i+=4){
+				new Timer(new Duration(milliseconds:1*i),(){
+					progressbar.attributes['value'] = i.toString();
+					if((i~/4)%(imageHeight)==0 && i!=0){
+						y+=sqheight;
+						x=1;
+					}
+					//RGBA
+//					print(pixels[i].toString()+", "+pixels[i+1].toString()+", "+pixels[i+2].toString()+", "+pixels[i+3].toString());
+					//set everything but 255,255,255,255 (white or blank)
+					if(pixels[i]==255 && pixels[i+1]==255 && pixels[i+2]==255 && pixels[i+3]==255){
+						//do nothing
+					}else{
+//						print(x.toString()+", "+y.toString());
+						boards.elementAt(boardnumber).setAt(x, y, pixels[i].toDouble(), pixels[i+1].toDouble(), pixels[i+2].toDouble());
+					}
+					//increase width everytime, reset when i/4 == width of image
+					x+=sqwidth;
+					//increase height only when i/4==height of image
+//					print((i~/4).toString()+" "+imageHeight.toString());
+//					print(i~/4%imageHeight);
 //					print(x.toString()+", "+y.toString());
-					boards.elementAt(boardnumber).setAt(x, y, pixels[i].toDouble(), pixels[i+1].toDouble(), pixels[i+2].toDouble());
-				}
-				//increase width everytime, reset when i/4 == width of image
-				x+=sqwidth;
-				//increase height only when i/4==height of image
-//				print((i~/4).toString()+" "+imageHeight.toString());
-//				print(i~/4%imageHeight);
-//				print(x.toString()+", "+y.toString());
-
+					boards[boardnumber].draw(1);
+				});
+				tmpCount = i;
 			}
-			boards[boardnumber].draw(1);
-			});
-			reader.readAsDataUrl(f.slice(0,f.size));
+		new Timer(new Duration(milliseconds:1*tmpCount+10), (){
+			progressbar.attributes['value'] = "0";
+		});
+	});
+	reader.readAsDataUrl(f.slice(0,f.size));
 	});
 	
 
@@ -367,14 +375,9 @@ export_board_button(){
 		if(!exporting){
 			print("Export Button Clicked");
 			String s = export_board();
-			var numblocks = boards.length*width~/sqwidth*height~/sqheight;
-//			Timer t = new Timer(new Duration(milliseconds:numblocks*2), (){
-				print(s);
-				download(s);
-				exporting = false;
-//				progressbar.setAttribute("value", "0".toString());
-//			});
-//			exporting = true;
+			print(s);
+			download(s);
+			exporting = false;
 		}
 	});
 }
@@ -450,7 +453,8 @@ double getGreen(){
  * Export xml using dart xml
  * Undo function (lol no)
  * FIXME TODO FIXME
- * Reimplement the progress bar thing
+ * Reimplement the progress bar thing (for export)
  * GIF Support (lol so funny)
- * 
+ * convert javascript listeners to dart
+ * add color preview for RGB
 */

@@ -62,15 +62,27 @@
 			type="range" id="yloc" min="-128" max="128" onchange="update('y')" />
 	</span> <br /> <span> z: <span id="zcount">0</span> <input
 			type="range" id="zloc" min="-128" max="128" onchange="update('z')" />
-	</span> <br /> <span id="leftrightsymmetrycontainer"> <input
+	</span> <br /> 
+	<label>
+		<span id="leftrightsymmetrycontainer"> <input
 			type="checkbox" id="leftrightsymmetry" value="leftright" />LeftRight
 			Symmetry
-	</span> <br /> <span id="topbottomsymmetrycontainer"> <input
+	</span>
+	</label>
+	<br /> 
+	<label>
+		<span id="topbottomsymmetrycontainer"> <input
 			type="checkbox" id="topbottomsymmetry" value="topbottom" />TopBottom
 			Symmetry
-	</span> <br /> <span id="axissymmetrycontainer"> <input
+	</span>
+	</label>
+	<br />
+	<label>
+		<span id="axissymmetrycontainer"> <input
 			type="checkbox" id="axissymmetry" value="axis" />Axis Symmetry
-	</span> <br /> <span id="fillboardcontainer"> <input type="button"
+	</span>
+	</label>
+	<br /> <span id="fillboardcontainer"> <input type="button"
 			id="fillboard" value="Fill Board" />
 	</span> <br /> <span id="insertboardcontainer"> <input type="button"
 			id="insertboard" value="Insert Board" />
@@ -82,7 +94,8 @@
 	</span>
 
 
-	<!--<progress id="exporting"></progress>
+	<progress id="exporting"></progress>
+	<!--
     <br />
     <input type="text" id="filename" value="SpaceEngineers.xml"/>-->
 	<br />
